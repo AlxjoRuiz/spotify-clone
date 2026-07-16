@@ -1,0 +1,113 @@
+body {
+    background-color: #121212;
+    color: #ffffff;
+    font-family: sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+#logo {
+    width: 80px;
+    margin-bottom: 20px;
+}
+
+/* configuracion del boton de Google */
+.btn-google {
+    position: relative;
+    overflow: hidden;
+    width: 300px;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 50px;
+    border: 3px solid transparent;
+    font-weight: bold;
+    cursor: pointer;
+    background-color: #ffffff;
+    color: #191414;
+    transition: transform 0.5s ease;
+    background-image: linear-gradient(#ffffff, #ffffff);
+    background-clip: padding-box;
+}
+
+.btn-google:hover {
+    background-image: linear-gradient(#ffffff, #ffffff),
+                        linear-gradient(to right, #4285f4, #ea4335, #fbbc05, #34a853);
+    background-clip: padding-box, border-box;
+    transform: scale(1.05);                    
+}
+
+
+/* configuracion de boton de Facebook */
+.btn-facebook {
+    width: 300px;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 50px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    background-color: #ffffff;
+    color: #191414;
+    transition: background-color 0.5s ease, transform 0.5s ease;
+}
+.btn-facebook:hover {
+    background-color: #0d47a1;
+    color: #ffffff;
+    transform: scale(1.05);
+}
+
+
+/* configuracion de boton de Apple */
+.btn-apple {
+    width: 300px;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 50px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    background-color: #ffffff;
+    color: #191414;
+    transition: background-color 0.5s ease, transform 0.5s ease;
+}
+.btn-apple:hover {
+    background-color: #191414;
+    color: #ffffff;
+    transform: scale(1.05);  
+}
+
+
+/* configuracion del boton de Number */
+.btn-number {
+    width: 300px;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 50px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    background-color: #ffffff;
+    color: #191414;
+    transition: background-color 0.5s ease, transform 0.5s ease;  
+}
+.btn-number:hover {
+    background-color: #212121;
+    color: #ffffff;  
+    transform: scale(1.05);
+}
+
+
+.btn-login {
+    width: 70px;
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 50px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    background-color: #333333;
+    color: #ffffff; 
+}
