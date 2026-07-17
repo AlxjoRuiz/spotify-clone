@@ -9,9 +9,26 @@ body {
     min-height: 100vh;
 }
 
+h1 {
+    font-family: "Georgia", sans-serif;
+}
+
+/* configuracion del logo */
 #logo {
     width: 80px;
     margin-bottom: 20px;
+    animation: glow 1.5s ease-in-out infinite;
+}
+@keyframes glow {
+    0% {
+        filter : drop-shadow(0 0 0px #1DB954);
+    }
+    50% {
+        filter: drop-shadow(0 0 10px #1DB954);
+    }
+    100% {
+        filter: drop-shadow(0 0 0px #1DB954);
+    }
 }
 
 /* configuracion del boton de Google */
@@ -25,15 +42,15 @@ body {
     border: 3px solid transparent;
     font-weight: bold;
     cursor: pointer;
-    background-color: #ffffff;
+    background-color: #FFFFFF;
     color: #191414;
     transition: transform 0.5s ease;
-    background-image: linear-gradient(#ffffff, #ffffff);
+    background-image: linear-gradient(#FFFFFF, #FFFFFF);
     background-clip: padding-box;
 }
 
 .btn-google:hover {
-    background-image: linear-gradient(#ffffff, #ffffff),
+    background-image: linear-gradient(#FFFFFF, #FFFFFF),
                         linear-gradient(to right, #4285f4, #ea4335, #fbbc05, #34a853);
     background-clip: padding-box, border-box;
     transform: scale(1.05);                    
@@ -49,13 +66,13 @@ body {
     border: none;
     font-weight: bold;
     cursor: pointer;
-    background-color: #ffffff;
+    background-color: #FFFFFF;
     color: #191414;
     transition: background-color 0.5s ease, transform 0.5s ease;
 }
 .btn-facebook:hover {
     background-color: #0d47a1;
-    color: #ffffff;
+    color: #FFFFFF;
     transform: scale(1.05);
 }
 
@@ -69,13 +86,13 @@ body {
     border: none;
     font-weight: bold;
     cursor: pointer;
-    background-color: #ffffff;
+    background-color: #FFFFFF;
     color: #191414;
     transition: background-color 0.5s ease, transform 0.5s ease;
 }
 .btn-apple:hover {
     background-color: #191414;
-    color: #ffffff;
+    color: #FFFFFF;
     transform: scale(1.05);  
 }
 
@@ -89,13 +106,13 @@ body {
     border: none;
     font-weight: bold;
     cursor: pointer;
-    background-color: #ffffff;
+    background-color: #FFFFFF;
     color: #191414;
     transition: background-color 0.5s ease, transform 0.5s ease;  
 }
 .btn-number:hover {
     background-color: #212121;
-    color: #ffffff;  
+    color: #FFFFFF;  
     transform: scale(1.05);
 }
 
@@ -108,6 +125,6 @@ body {
     border: none;
     font-weight: bold;
     cursor: pointer;
-    background-color: #333333;
-    color: #ffffff; 
+    background-color: #1DB954;
+    color: #FFFFFF; 
 }
