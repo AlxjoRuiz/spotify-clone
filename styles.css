@@ -34,7 +34,7 @@ body {
 }
 
 h1 {
-    font-family: "Georgia", sans-serif;
+    font-family: "Poppins", sans-serif;
 }
 
 /* configuracion del logo */
@@ -66,16 +66,18 @@ h1 {
     border: 3px solid transparent;
     font-weight: bold;
     cursor: pointer;
-    background-color: #FFFFFF;
-    color: #191414;
+    color: #FFFFFF;
     transition: transform 0.5s ease;
-    background-image: linear-gradient(#FFFFFF, #FFFFFF);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    background-image: linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08));
     background-clip: padding-box;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .btn-google:hover {
-    background-image: linear-gradient(#FFFFFF, #FFFFFF),
-                        linear-gradient(to right, #4285f4, #ea4335, #fbbc05,#34a853);
+    background-image: linear-gradient(rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.15)),
+                        linear-gradient(to right, #4285F4, #EA4335, #FBBC05, #34A853);
     background-clip: padding-box, border-box;
     transform: scale(1.05);                    
 }
@@ -87,11 +89,11 @@ h1 {
     padding: 15px;
     margin: 10px 0;
     border-radius: 50px;
-    border: none;
+    border: 1px solid rgba(255, 255, 255, 0.15);
     font-weight: bold;
     cursor: pointer;
-    background-color: #FFFFFF;
-    color: #191414;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #FFFFFF;
     transition: background-color 0.5s ease, transform 0.5s ease;
 }
 .btn-facebook:hover {
@@ -107,11 +109,11 @@ h1 {
     padding: 15px;
     margin: 10px 0;
     border-radius: 50px;
-    border: none;
+    border: 1px solid rgba(255, 255, 255, 0.15);
     font-weight: bold;
     cursor: pointer;
-    background-color: #FFFFFF;
-    color: #191414;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #FFFFFF;
     transition: background-color 0.5s ease, transform 0.5s ease;
 }
 .btn-apple:hover {
@@ -127,11 +129,11 @@ h1 {
     padding: 15px;
     margin: 10px 0;
     border-radius: 50px;
-    border: none;
+    border: 1px solid rgba(255, 255, 255, 0.15);
     font-weight: bold;
     cursor: pointer;
-    background-color: #FFFFFF;
-    color: #191414;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #FFFFFF;
     transition: background-color 0.5s ease, transform 0.5s ease;  
 }
 .btn-number:hover {
