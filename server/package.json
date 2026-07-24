@@ -17,5 +17,9 @@
   "bugs": {
     "url": "https://github.com/AlxjoRuiz/spotify-login-clone/issues"
   },
-  "homepage": "https://github.com/AlxjoRuiz/spotify-login-clone#readme"
+  "homepage": "https://github.com/AlxjoRuiz/spotify-login-clone#readme",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1"
+  }
 }
