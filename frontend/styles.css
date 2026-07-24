@@ -12,6 +12,7 @@ body {
     overflow: hidden;
 }
 
+/* configuracion del video de fondo */
 #video-fondo {
     position: fixed;
     top: 0;
@@ -22,6 +23,7 @@ body {
     z-index: -1;
 }
 
+/* configuracion del contenedor de login */
 .login {
     display: flex;
     flex-direction: column;
@@ -33,6 +35,7 @@ body {
     border-radius: 26px;        
 }
 
+/* configuracion del titulo */
 h1 {
     font-family: "Poppins", sans-serif;
 }
@@ -48,7 +51,7 @@ h1 {
         filter : drop-shadow(0 0 0px #1DB954);
     }
     50% {
-        filter: drop-shadow(0 0 5px #1DB954);
+        filter: drop-shadow(0 0 3px #1DB954);
     }
     100% {
         filter: drop-shadow(0 0 0px #1DB954);
@@ -149,9 +152,15 @@ h1 {
     padding: 10px;
     margin: 5px 0;
     border-radius: 50px;
-    border: none;
+    border: 1px solid rgba(255, 255, 255, 0.15);
     font-weight: bold;
     cursor: pointer;
-    background-color: #1DB954;
-    color: #FFFFFF; 
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #FFFFFF;
+    transition: background-color 0.5s ease, transform 0.5s ease;
+}
+.btn-login:hover {
+    background-color: #1ed760;
+    color: #FFFFFF;  
+    transform: scale(1.05);
 }
