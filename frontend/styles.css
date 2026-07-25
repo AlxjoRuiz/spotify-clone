@@ -31,12 +31,17 @@ body {
     min-width: 340px;
     padding: 10px;
     backdrop-filter: blur(24px) saturate(1.35);
-    border: 1px solid rgba(255, 255, 255,.18);
-    border-radius: 26px;        
+    border: 1px solid rgba(255, 255, 255, .18);
+    border-radius: 26px;
 }
 
 /* configuracion del titulo */
 h1 {
+    font-family: "Poppins", sans-serif;
+}
+
+/* configuracion del p */
+p {
     font-family: "Poppins", sans-serif;
 }
 
@@ -45,17 +50,6 @@ h1 {
     width: 80px;
     margin-bottom: 20px;
     animation: glow 1.5s ease-in-out infinite;
-}
-@keyframes glow {
-    0% {
-        filter : drop-shadow(0 0 0px #1DB954);
-    }
-    50% {
-        filter: drop-shadow(0 0 3px #1DB954);
-    }
-    100% {
-        filter: drop-shadow(0 0 0px #1DB954);
-    }
 }
 
 /* configuracion del boton de Google */
@@ -74,81 +68,21 @@ h1 {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     background-image: linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08));
     background-clip: padding-box;
-    background-color: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    display: block;
+    text-decoration: none;
+    text-align: center;
 }
 
 .btn-google:hover {
     background-image: linear-gradient(rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.15)),
                         linear-gradient(to right, #4285F4, #EA4335, #FBBC05, #34A853);
     background-clip: padding-box, border-box;
-    transform: scale(1.05);                    
-}
-
-
-/* configuracion de boton de Facebook */
-.btn-facebook {
-    width: 300px;
-    padding: 15px;
-    margin: 10px 0;
-    border-radius: 50px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    font-weight: bold;
-    cursor: pointer;
-    background-color: rgba(255, 255, 255, 0.1);
-    color: #FFFFFF;
-    transition: background-color 0.5s ease, transform 0.5s ease;
-}
-.btn-facebook:hover {
-    background-color: #3B5998;
-    color: #FFFFFF;
     transform: scale(1.05);
 }
-
-
-/* configuracion de boton de Apple */
-.btn-apple {
-    width: 300px;
-    padding: 15px;
-    margin: 10px 0;
-    border-radius: 50px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    font-weight: bold;
-    cursor: pointer;
-    background-color: rgba(255, 255, 255, 0.1);
-    color: #FFFFFF;
-    transition: background-color 0.5s ease, transform 0.5s ease;
-}
-.btn-apple:hover {
-    background-color: #191414;
-    color: #FFFFFF;
-    transform: scale(1.05);  
-}
-
-
-/* configuracion del boton de Number */
-.btn-number {
-    width: 300px;
-    padding: 15px;
-    margin: 10px 0;
-    border-radius: 50px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    font-weight: bold;
-    cursor: pointer;
-    background-color: rgba(255, 255, 255, 0.1);
-    color: #FFFFFF;
-    transition: background-color 0.5s ease, transform 0.5s ease;  
-}
-.btn-number:hover {
-    background-color: #535353;
-    color: #FFFFFF;  
-    transform: scale(1.05);
-}
-
 
 /* configuracion login */
 .btn-login {
-    width: 70px;
+    width: 300px;
     padding: 10px;
     margin: 5px 0;
     border-radius: 50px;
@@ -161,6 +95,6 @@ h1 {
 }
 .btn-login:hover {
     background-color: #1ed760;
-    color: #FFFFFF;  
+    color: #FFFFFF;
     transform: scale(1.05);
 }
