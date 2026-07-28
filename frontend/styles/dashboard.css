@@ -1,0 +1,24 @@
+body {
+    margin: 0;
+}
+
+.dashboard-container {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    height: 100vh;
+}
+
+.sidebar {
+    background-color: #000000;
+    color: #FFFFFF
+}
+
+.main-content {
+    background-color: #181818;
+    color: #FFFFFF;
+}
+
+.sidebar a {
+    color: #FFFFFF;
+    text-decoration: none;
+}

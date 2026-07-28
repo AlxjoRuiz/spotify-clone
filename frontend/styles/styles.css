@@ -75,17 +75,17 @@ p {
 
 .btn-google:hover {
     background-image: linear-gradient(rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.15)),
-                        linear-gradient(to right, #4285F4, #EA4335, #FBBC05, #34A853);
+        linear-gradient(to right, #4285F4, #EA4335, #FBBC05, #34A853);
     background-clip: padding-box, border-box;
     transform: scale(1.05);
 }
 
 /* configuracion login */
 .btn-login {
-    width: 300px;
+    width: 100px;
     padding: 10px;
     margin: 5px 0;
-    border-radius: 50px;
+    border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.15);
     font-weight: bold;
     cursor: pointer;
@@ -93,6 +93,7 @@ p {
     color: #FFFFFF;
     transition: background-color 0.5s ease, transform 0.5s ease;
 }
+
 .btn-login:hover {
     background-color: #1ed760;
     color: #FFFFFF;
