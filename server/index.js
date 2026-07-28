@@ -8,6 +8,19 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const session = require('express-session');                     
 
 const app = express();
+
+function verificarLogin(req, res, next) {
+    if (req.isAuthenticated()) {
+        next();     
+    } else {
+        res.redirect('/pages/index.html')
+    }
+};
+
+app.get('/pages/dashboard.html', verificarLogin, (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'frontend', 'pages', 'dashboard.html'));
+});
+
 app.use(express.static(path.join(__dirname, '..', 'frontend')));
 
 app.use(session({
