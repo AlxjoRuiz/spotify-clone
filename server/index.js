@@ -95,7 +95,7 @@ app.get('/auth/spotify/callback', async (req, res) => {
 
         // Guarda el token en la sesión, para usarlo después en pedidos a la API de Spotify
         req.session.spotify_access_token = response.data.access_token;
-        res.redirect('/pages/dashboard.html');
+        res.redirect(`/pages/dashboard.html?nombre=${encodeURIComponent(req.user.displayName)}`);
 
     } catch (error) {
         console.error(error.response?.data || error.message);
@@ -120,7 +120,7 @@ app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'em
 app.get('/auth/google/callback',
     passport.authenticate('google', { failureRedirect: '/' }), // Si falla, vuelve al inicio
     (req, res) => {
-        res.redirect('/pages/dashboard.html');
+        res.redirect(`/pages/dashboard.html?nombre=${encodeURIComponent(req.user.displayName)}`);
     }
 );
 
