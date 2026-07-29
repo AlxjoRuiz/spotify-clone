@@ -69,7 +69,7 @@ app.get('/auth/spotify', (req, res) => {
         client_id: SPOTIFY_CLIENT_ID,
         response_type: 'code', // Pedimos un "code" (Authorization Code Flow)
         redirect_uri: SPOTIFY_REDIRECT_URI,
-        scope: 'user-read-private user-read-email' // Qué datos pedimos
+        scope: 'user-read-private user-read-email user-read-recently-played' // Qué datos pedimos
     });
     res.redirect(`https://accounts.spotify.com/authorize?${params.toString()}`);
 });
@@ -100,6 +100,29 @@ app.get('/auth/spotify/callback', async (req, res) => {
     } catch (error) {
         console.error(error.response?.data || error.message);
         res.send('Error al conectar con Spotify');
+    }
+});
+
+// Ruta que devuelve las canciones escuchadas recientemente por el usuario
+app.get('/api/canciones', async (req, res) => {
+    // Recupera el token guardado cuando el usuario autorizó Spotify
+    const token = req.session.spotify_access_token;
+
+    try {
+        // Pide a Spotify las canciones recientes, usando el token como credencial
+        const response = await axios.get('https://api.spotify.com/v1/me/player/recently-played', {
+            headers: {
+                'Authorization': `Bearer ${token}` // Formato estándar para mandar el token
+            }
+        });
+
+        // Si todo sale bien, le devuelve esos datos al navegador
+        res.json(response.data);
+
+    } catch (error) {
+        // Si algo falla (token vencido, sin permiso, etc.), avisa sin romper el servidor
+        console.error(error.response?.data || error.message);
+        res.status(500).json({ error: 'No se pudieron obtener las canciones' });
     }
 });
 
