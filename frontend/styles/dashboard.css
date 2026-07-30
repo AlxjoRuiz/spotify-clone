@@ -22,3 +22,16 @@ body {
     color: #FFFFFF;
     text-decoration: none;
 }
+
+.main-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 20px;
+}
+
+.tarjeta-cancion img {
+    width: 100%;
+    max-width: 200px;
+    height: auto;
+    border-radius: 8px;
+}
