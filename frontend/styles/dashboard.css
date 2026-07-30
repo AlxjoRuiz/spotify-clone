@@ -34,4 +34,43 @@ body {
     max-width: 200px;
     height: auto;
     border-radius: 8px;
+    transition: transform 0.4s ease-in-out;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+.tarjeta-cancion img:hover {
+    transform: scale(1.05)
+}
+
+.tarjeta-cancion {
+    background-color: #282828;
+    border-radius: 8px;
+    padding: 16px;
+    transition: background-color 0.3s ease;
+    align-self: start;
+    position: relative;
+    overflow: hidden;
+}
+.tarjeta-cancion::before {
+    content : ' ';
+    position: absolute;
+    inset: 0;
+    background-image: var(--portada-url);
+    background-size: cover;
+    background-color: #383838;
+    filter: blur(30px) brightness(0.5);
+    z-index: 0;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.tarjeta-cancion:hover::before {
+    opacity: 1;
+}
+
+.tarjeta-cancion p {
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8)
 }

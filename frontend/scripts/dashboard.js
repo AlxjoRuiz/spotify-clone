@@ -17,40 +17,26 @@ fetch('/api/canciones')
     // Ya con los datos listos, recorremos la lista de canciones una por una
     .then(data => {
         data.items.forEach(item => {
-            // Crea un <div> nuevo que va a agrupar toda la info de esta canción
-            const tarjeta = document.createElement('div');
+            
+            const tarjeta = document.createElement('div'); // Crea un <div> nuevo que va a agrupar toda la info de esta canción
+            tarjeta.classList.add('tarjeta-cancion'); // Le agrega la clase CSS "tarjeta-cancion", para poder estilarla después
 
-            // Le agrega la clase CSS "tarjeta-cancion", para poder estilarla después
-            tarjeta.classList.add('tarjeta-cancion');
+            tarjeta.style.setProperty('--portada-url', `url(${item.track.album.images[0].url})`);           
 
-            // Crea un elemento <p> nuevo, vacío por ahora
-            const cancion = document.createElement('p');
+            const portada = document.createElement('img'); // Crea un elemento <img> nuevo para la portada del álbum
+            portada.src = item.track.album.images[0].url; // Le asigna la URL de la portada (images es un array de tamaños distintos)
+            tarjeta.appendChild(portada); // Agrega la imagen al main-content
 
-            // Le pone como texto el nombre de la canción (item.track.name)
-            cancion.textContent = item.track.name;
+            
+            const cancion = document.createElement('p'); // Crea un elemento <p> nuevo, vacío por ahora
+            cancion.textContent = item.track.name; // Le pone como texto el nombre de la canción (item.track.name)
+            tarjeta.appendChild(cancion); // Busca el main-content y le agrega el <p> recién creado, al final
 
-            // Busca el main-content y le agrega el <p> recién creado, al final
-            tarjeta.appendChild(cancion);
-
-            // Crea un elemento <p> nuevo para el artista
-            const artista = document.createElement('p');
-
-            // Le pone como texto el nombre del primer artista (artists es un array)
-            artista.textContent = item.track.artists[0].name;
-
-            // Agrega el <p> del artista al main-content
-            tarjeta.appendChild(artista);
-
-            // Crea un elemento <img> nuevo para la portada del álbum
-            const portada = document.createElement('img');
-
-            // Le asigna la URL de la portada (images es un array de tamaños distintos)
-            portada.src = item.track.album.images[0].url;
-
-            // Agrega la imagen al main-content
-            tarjeta.appendChild(portada);
-
-            // Agrega la tarjeta completa al main-content
-            document.querySelector('.main-content').appendChild(tarjeta);
+            
+            const artista = document.createElement('p'); // Crea un elemento <p> nuevo para el artista
+            artista.textContent = item.track.artists[0].name; // Le pone como texto el nombre del primer artista (artists es un array)
+            tarjeta.appendChild(artista); // Agrega el <p> del artista al main-content
+           
+            document.querySelector('.main-content').appendChild(tarjeta); // Agrega la tarjeta completa al main-content
         });
     });
