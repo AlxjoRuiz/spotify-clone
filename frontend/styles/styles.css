@@ -49,11 +49,12 @@ p {
 #logo {
     width: 80px;
     margin-bottom: 20px;
-    animation: glow 1.5s ease-in-out infinite;
+    animation: glow 1.5s ease-i
+    n-out infinite;
 }
 
-/* configuracion del boton de Google */
-.btn-google {
+/* configuracion del boton de Spotify */
+.btn-spotify {
     position: relative;
     overflow: hidden;
     width: 300px;
@@ -73,7 +74,7 @@ p {
     text-align: center;
 }
 
-.btn-google:hover {
+.btn-spotify:hover {
     background-image: linear-gradient(rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.15)),
         linear-gradient(to right, #4285F4, #EA4335, #FBBC05, #34A853);
     background-clip: padding-box, border-box;
