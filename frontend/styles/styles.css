@@ -76,7 +76,7 @@ p {
 
 .btn-spotify:hover {
     background-image: linear-gradient(rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.15)),
-        linear-gradient(to right, #4285F4, #EA4335, #FBBC05, #34A853);
+        linear-gradient(to right, #1DB954, #1DB954, #1DB954, #1DB954);
     background-clip: padding-box, border-box;
     transform: scale(1.05);
 }
