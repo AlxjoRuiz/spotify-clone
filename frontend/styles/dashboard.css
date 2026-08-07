@@ -1,64 +1,183 @@
+/* ========================================
+   TEMA SPOTIFY
+   ======================================== */
+
 body {
     margin: 0;
+    font-family: "Poppins", sans-serif;
+    background: #121212;          /* fondo negro Spotify */
+    color: #FFFFFF;
 }
+
+/* ========================================
+   LAYOUT
+   ======================================== */
 
 .dashboard-container {
     display: grid;
     grid-template-columns: 240px 1fr;
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+        "sidebar header"
+        "sidebar main";
     height: 100vh;
 }
 
+/* ========================================
+   SIDEBAR
+   ======================================== */
+
 .sidebar {
+    grid-area: sidebar;
     background-color: #000000;
-    color: #FFFFFF
+    color: #FFFFFF;
+    padding: 24px 16px;
 }
 
-.main-content {
-    background-color: #181818;
-    color: #FFFFFF;
+.sidebar h2 {
+    font-size: 1.4rem;
+    margin: 0 0 20px;
 }
 
 .sidebar a {
-    color: #FFFFFF;
+    color: #B3B3B3;              /* gris claro, no blanco puro */
     text-decoration: none;
+    display: block;
+    padding: 8px 0;
+    font-weight: 600;
+    transition: color 0.2s;
 }
 
+.sidebar a:hover {
+    color: #FFFFFF;              /* blanco al pasar el mouse */
+}
+
+/* Buscador en el sidebar */
+.buscador {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.buscador input {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 20px;
+    border: none;
+    background: #282828;
+    color: #FFFFFF;
+    font-family: "Poppins", sans-serif;
+    outline: none;
+}
+
+.buscador input::placeholder {
+    color: #B3B3B3;
+}
+
+.buscador button {
+    padding: 8px 14px;
+    border-radius: 20px;
+    border: none;
+    background: #1DB954;          /* verde Spotify */
+    color: #000000;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: "Poppins", sans-serif;
+    transition: transform 0.2s;
+}
+
+.buscador button:hover {
+    transform: scale(1.05);
+}
+
+/* ========================================
+   HEADER (barra superior)
+   ======================================== */
+
+.header {
+    grid-area: header;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 32px;
+    background: transparent;
+}
+
+.header .greeting {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.header .perfil {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #000000;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* ========================================
+   CONTENIDO PRINCIPAL
+   ======================================== */
+
 .main-content {
+    grid-area: main;
+    padding: 24px 32px;
+    overflow-y: auto;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 20px;
+    align-content: start;
 }
 
-.tarjeta-cancion img {
-    width: 100%;
-    max-width: 200px;
-    height: auto;
-    border-radius: 8px;
-    transition: transform 0.4s ease-in-out;
-    position: relative;
-    z-index: 1;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+/* Títulos de sección (h2 dentro de main) */
+.main-content h2 {
+    grid-column: 1 / -1;          /* ocupa todo el ancho */
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 20px 0 10px;
 }
-.tarjeta-cancion img:hover {
-    transform: scale(1.05)
-}
+
+/* ========================================
+   TARJETAS (canciones / playlists)
+   MANTIENE EL EFECTO DEGRADADO/HOVER
+   ======================================== */
 
 .tarjeta-cancion {
-    background-color: #282828;
+    background-color: #181818;     /* gris oscuro Spotify */
     border-radius: 8px;
     padding: 16px;
     transition: background-color 0.3s ease;
-    align-self: start;
     position: relative;
     overflow: hidden;
+    cursor: pointer;
 }
+
+.tarjeta-cancion:hover {
+    background-color: #282828;     /* se ilumina al pasar */
+}
+
+/* Imagen de portada */
+.tarjeta-cancion img {
+    width: 100%;
+    aspect-ratio: 1;             /* cuadradas como Spotify */
+    object-fit: cover;
+    border-radius: 4px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    position: relative;
+    z-index: 1;
+}
+
+/* Efecto degradado de fondo (EL QUE YA TENÍAS) */
 .tarjeta-cancion::before {
-    content : ' ';
+    content: ' ';
     position: absolute;
     inset: 0;
     background-image: var(--portada-url);
     background-size: cover;
-    background-color: #383838;
     filter: blur(30px) brightness(0.5);
     z-index: 0;
     opacity: 0;
@@ -66,12 +185,21 @@ body {
 }
 
 .tarjeta-cancion:hover::before {
-    opacity: 1;
+    opacity: 1;                   /* aparece el degradado al hover */
 }
 
+/* Textos de la tarjeta */
 .tarjeta-cancion p {
     font-family: "Poppins", sans-serif;
     position: relative;
     z-index: 1;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8)
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+    margin: 8px 0 0;
+    font-weight: 600;
+}
+
+.tarjeta-cancion p:last-child {
+    color: #B3B3B3;              /* subtítulo en gris */
+    font-weight: 400;
+    font-size: 0.85rem;
 }

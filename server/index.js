@@ -115,6 +115,127 @@ async function renovarAccessTokenSpotify(userId) {
     }
 }
 
+
+async function pedirASpotify(url, req) {
+
+    // Saca el token actual de la sesión (el que se guardó al hacer login)
+    let token = req.session.spotify_access_token;
+
+    try {
+        // Hace la petición GET a Spotify, usando el token como credencial
+        const response = await axios.get(url, {
+            headers: { 'Authorization': `Bearer ${token}` } // Formato estándar de Spotify
+        });
+
+        // Si todo sale bien, devuelve los datos que pidió la ruta
+        return response.data;
+
+    } catch (error) {
+
+        // ¿El error fue un 401? Eso significa que el token venció
+        if (error.response?.status === 401) {
+
+            // Busca el id del usuario en la sesión (lo guardamos al hacer login)
+            const userId = req.session.spotify_user?.id;
+
+            // Usa el refresh_token de Supabase para pedir un access_token nuevo
+            const tokenNuevo = userId ? await renovarAccessTokenSpotify(userId) : null;
+
+            // Si consiguió token nuevo, lo guarda en la sesión y reintenta la petición
+            if (tokenNuevo) {
+                req.session.spotify_access_token = tokenNuevo;
+
+                // Vuelve a pedir lo mismo, pero ahora con el token fresco
+                const reintento = await axios.get(url, {
+                    headers: { 'Authorization': `Bearer ${tokenNuevo}` }
+                });
+
+                // Devuelve los datos del segundo intento
+                return reintento.data;
+            }
+        }
+
+        // Si no fue 401, o no se pudo renovar, avisa el error para arriba
+        throw error;
+    }
+}
+
+// Ruta que devuelve las canciones escuchadas recientemente por el usuario
+app.get('/api/canciones', async (req, res) => {
+
+    try {
+        // Pide a Spotify las canciones recientes usando el helper
+        // (el helper ya se encarga de renovar el token si hace falta)
+        const data = await pedirASpotify('https://api.spotify.com/v1/me/player/recently-played', req);
+
+        // Si todo sale bien, le devuelve esos datos al navegador
+        res.json(data);
+
+    } catch (error) {
+        // Si algo falla, avisa sin romper el servidor
+        console.error(error.response?.data || error.message);
+        res.status(500).json({ error: 'No se pudieron obtener las canciones' });
+    }
+});
+
+// Ruta que devuelve playlists populares de distintos géneros
+// Se arma buscando varias palabras conocidas y juntando los resultados,
+// porque el endpoint de "nuevos lanzamientos" está bloqueado para apps en desarrollo.
+app.get('/api/playlists-populares', async (req, res) => {
+
+    try {
+        // Lista de búsquedas que van a llenar la home (cada una trae 3 playlists)
+        const busquedas = ['hot hits', 'reggaeton', 'rock', 'pop', 'top 50', 'dance'];
+
+        // Busca todas al mismo tiempo (Promise.all) para no esperarlas una por una
+        const resultados = await Promise.all(busquedas.map(busqueda =>
+            pedirASpotify(`https://api.spotify.com/v1/search?q=${encodeURIComponent(busqueda)}&type=playlist&limit=3&market=CO`, req)
+        ));
+
+        // Junta todas las playlists en un solo array, sin repetir (Set guarda los ids ya vistos)
+        const vistos = new Set();
+        const playlists = [];
+
+        for (const resultado of resultados) {
+            for (const playlist of resultado.playlists.items) {
+                if (!playlist) continue; // Spotify a veces devuelve items nulos
+                if (!vistos.has(playlist.id)) {
+                    vistos.add(playlist.id);
+                    playlists.push(playlist);
+                }
+            }
+        }
+    
+        // Le manda la lista armada al navegador
+        res.json({ playlists });
+
+    } catch (error) {
+        // Si algo falla, avisa sin romper el servidor
+        console.error(error.response?.data || error.message);
+        res.status(500).json({ error: 'No se pudieron obtener las playlists' });
+    }
+});
+
+// Ruta que busca canciones/artistas en Spotify según lo que escriba el usuario
+app.get('/api/buscar', async (req, res) => {
+
+    try {
+        // Toma el texto que llegó desde el frontend (?q=...)
+        const q = req.query.q;
+
+        // Pide a Spotify los resultados de búsqueda (type=track devuelve canciones)
+        const data = await pedirASpotify(`https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=track&limit=20&market=CO`, req);
+
+        // Devuelve los tracks encontrados
+        res.json(data);
+
+    } catch (error) {
+        // Si algo falla, avisa sin romper el servidor
+        console.error(error.response?.data || error.message);
+        res.status(500).json({ error: 'No se pudo buscar' });
+    }
+});
+
 // --- Login con Spotify (Authorization Code Flow) ---
 
 app.get('/auth/spotify', (req, res) => {
@@ -139,8 +260,7 @@ app.get('/auth/spotify/callback', async (req, res) => {
                 redirect_uri: SPOTIFY_REDIRECT_URI,
                 client_id: SPOTIFY_CLIENT_ID,
                 client_secret: SPOTIFY_CLIENT_SECRET
-            }),
-            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+            }),            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
         );
 
         const accessToken = response.data.access_token;
@@ -183,40 +303,6 @@ app.get('/auth/spotify/callback', async (req, res) => {
     }
 });
 
-// --- API propia ---
-
-app.get('/api/canciones', async (req, res) => {
-    let token = req.session.spotify_access_token;
-
-    try {
-        const response = await axios.get('https://api.spotify.com/v1/me/player/recently-played', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        res.json(response.data);
-
-    } catch (error) {
-        // Token vencido (401): renueva con el refresh_token y reintenta una vez
-        if (error.response?.status === 401) {
-            const userId = req.session.spotify_user?.id;
-            const tokenNuevo = userId ? await renovarAccessTokenSpotify(userId) : null;
-
-            if (tokenNuevo) {
-                req.session.spotify_access_token = tokenNuevo;
-                try {
-                    const reintento = await axios.get('https://api.spotify.com/v1/me/player/recently-played', {
-                        headers: { 'Authorization': `Bearer ${tokenNuevo}` }
-                    });
-                    return res.json(reintento.data);
-                } catch (errorReintento) {
-                    console.error(errorReintento.response?.data || errorReintento.message);
-                }
-            }
-        }
-
-        console.error(error.response?.data || error.message);
-        res.status(500).json({ error: 'No se pudieron obtener las canciones' });
-    }
-});
 
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
