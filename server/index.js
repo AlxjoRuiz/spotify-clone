@@ -1,58 +1,55 @@
-// Carga las variables del archivo .env (credenciales, puerto, etc.)
-// Siempre va primero, antes de usar process.env
-require('dotenv').config();
+require('dotenv').config(); // Carga las variables del .env (credenciales, puerto)
 
-const path = require('path');       // Ayuda a armar rutas de archivos/carpetas
-const express = require('express'); // Framework del servidor
-const session = require('express-session'); // Mantiene la sesión del usuario
-const axios = require('axios');     // Hace peticiones HTTP (lo usamos para hablar con Spotify)
+const path = require('path');
+const express = require('express');
+const session = require('express-session'); // Guarda el token de Spotify en la sesión del usuario
+const axios = require('axios'); // Hace las peticiones HTTP a Spotify y Supabase
 
-const app = express(); // Crea la app del servidor
+const app = express();
 
-// Middleware: revisa si el usuario tiene sesión activa antes de dejarlo pasar
-// Antes usaba req.isAuthenticated() (de Passport/Google). Ahora, sin Google,
-// la prueba de que el usuario está logueado es que tenga guardado el token de Spotify.
+// --- Login/sesión ---
+
+// Protege rutas: solo pasa si hay un access_token de Spotify guardado en sesión
 function verificarLogin(req, res, next) {
     if (req.session.spotify_access_token) {
-        next(); // Sí está logueado, sigue a la ruta pedida
+        next();
     } else {
-        res.redirect('/pages/index.html'); // No está logueado, lo manda al login
+        res.redirect('/pages/index.html');
     }
 };
 
-// Activa las sesiones (cookie que "recuerda" al usuario entre peticiones)
 app.use(session({
-    secret: 'un_secreto_cualquiera', // Firma la cookie (en producción va en .env)
+    secret: 'un_secreto_cualquiera', // En producción, mover al .env
     resave: false,
     saveUninitialized: true
 }));
 
-// Ruta protegida: solo entrega dashboard.html si hay sesión activa
 app.get('/pages/dashboard.html', verificarLogin, (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'frontend', 'pages', 'dashboard.html'));
 });
 
-// Sirve todos los archivos del frontend (HTML, CSS, JS, imágenes) automáticamente
 app.use(express.static(path.join(__dirname, '..', 'frontend')));
 
-const PORT = process.env.PORT; // Puerto del servidor, definido en .env
+const PORT = process.env.PORT;
 
-// Ruta de prueba: confirma que el servidor está vivo
 app.get('/', (req, res) => {
     res.send('¡Servidor funcionando!');
 });
 
-// Credenciales y datos de la app de Spotify (desde .env)
+// --- Credenciales (Spotify + Supabase) ---
+
 const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 const SPOTIFY_REDIRECT_URI = process.env.SPOTIFY_REDIRECT_URI;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+// --- Helpers de Supabase ---
+// Los tres pegan directo a la REST API de Supabase con la SERVICE_ROLE_KEY (acceso admin, salta RLS)
+
+// Inserta o actualiza una fila. onConflict indica la columna única para decidir si crea o actualiza.
 async function upsertSupabaseTable(table, payload, onConflict) {
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-        return null;
-    }
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return null;
 
     const url = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/${table}`;
     const response = await axios.post(url, payload, {
@@ -63,16 +60,12 @@ async function upsertSupabaseTable(table, payload, onConflict) {
             Prefer: `resolution=merge-duplicates,return=representation${onConflict ? `,on_conflict=${onConflict}` : ''}`
         }
     });
-
     return response.data;
 }
 
-// Lee filas de una tabla de Supabase con filtros tipo "columna=valor"
-// Ej: leerSupabase('user_profiles', { user_id: 'abc-123' })
+// Lee filas filtrando por columna=valor. Ej: leerSupabase('user_profiles', { user_id: 5 })
 async function leerSupabase(table, filtros) {
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-        return null;
-    }
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return null;
 
     const query = new URLSearchParams();
     for (const [columna, valor] of Object.entries(filtros)) {
@@ -86,19 +79,15 @@ async function leerSupabase(table, filtros) {
             Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
         }
     });
-
     return response.data;
 }
 
-// Pide a Spotify un access_token nuevo usando el refresh_token guardado en Supabase
+// Usa el refresh_token guardado en Supabase para pedirle a Spotify un access_token nuevo
 async function renovarAccessTokenSpotify(userId) {
     try {
         const filas = await leerSupabase('user_profiles', { user_id: userId });
         const refreshToken = filas?.[0]?.refresh_token_spotify;
-
-        if (!refreshToken) {
-            return null;
-        }
+        if (!refreshToken) return null;
 
         const response = await axios.post('https://accounts.spotify.com/api/token',
             new URLSearchParams({
@@ -107,14 +96,12 @@ async function renovarAccessTokenSpotify(userId) {
                 client_id: SPOTIFY_CLIENT_ID,
                 client_secret: SPOTIFY_CLIENT_SECRET
             }),
-            {
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-            }
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
         );
 
         const nuevoToken = response.data.access_token;
 
-        // Guarda el token nuevo (y el refresh_token por si Spotify lo rotó)
+        // Spotify a veces rota el refresh_token; si no manda uno nuevo, conserva el viejo
         await upsertSupabaseTable('user_profiles', {
             user_id: userId,
             token_spotify: nuevoToken,
@@ -128,24 +115,23 @@ async function renovarAccessTokenSpotify(userId) {
     }
 }
 
-// Ruta que arranca el login/autorización con Spotify
+// --- Login con Spotify (Authorization Code Flow) ---
+
 app.get('/auth/spotify', (req, res) => {
-    // Arma los parámetros que Spotify necesita en la URL de autorización
     const params = new URLSearchParams({
         client_id: SPOTIFY_CLIENT_ID,
-        response_type: 'code', // Pedimos un "code" (Authorization Code Flow)
+        response_type: 'code',
         redirect_uri: SPOTIFY_REDIRECT_URI,
-        scope: 'user-read-private user-read-email user-read-recently-played' // Qué datos pedimos
+        scope: 'user-read-private user-read-email user-read-recently-played'
     });
     res.redirect(`https://accounts.spotify.com/authorize?${params.toString()}`);
 });
 
-// Ruta de callback: Spotify vuelve acá después de que el usuario autoriza
 app.get('/auth/spotify/callback', async (req, res) => {
-    const code = req.query.code; // El código temporal que mandó Spotify
+    const code = req.query.code;
 
     try {
-        // 1) Intercambia el "code" por un access_token real (petición al servidor de Spotify)
+        // 1) Cambia el code por un access_token + refresh_token
         const response = await axios.post('https://accounts.spotify.com/api/token',
             new URLSearchParams({
                 grant_type: 'authorization_code',
@@ -154,51 +140,40 @@ app.get('/auth/spotify/callback', async (req, res) => {
                 client_id: SPOTIFY_CLIENT_ID,
                 client_secret: SPOTIFY_CLIENT_SECRET
             }),
-            {
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-            }
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
         );
 
-        // Guarda el token en la sesión, para usarlo después en pedidos a la API de Spotify
         const accessToken = response.data.access_token;
         const refreshToken = response.data.refresh_token;
         req.session.spotify_access_token = accessToken;
 
-        // 2) Con ese token, le preguntamos a Spotify "¿quién sos?"
-        //    Mismo patrón que /api/canciones, pero apuntando al endpoint de perfil
+        // 2) Pregunta a Spotify quién es el usuario dueño de ese token
         const perfilResponse = await axios.get('https://api.spotify.com/v1/me', {
-            headers: {
-                'Authorization': `Bearer ${accessToken}` // el token identifica al usuario ante Spotify
-            }
+            headers: { 'Authorization': `Bearer ${accessToken}` }
         });
-
-        // 3) perfilResponse.data trae el perfil: { id, display_name, email, ... }
         const perfilSpotify = perfilResponse.data;
 
-        // 4) Guarda/actualiza el usuario en Supabase (busca por spotify_id, crea si no existe)
-        const userPayload = {
+        // 3) Guarda/actualiza al usuario en la tabla `users`, identificado por spotify_id
+        const userRows = await upsertSupabaseTable('users', {
             spotify_id: perfilSpotify.id,
             display_name: perfilSpotify.display_name ?? null,
             email: perfilSpotify.email ?? null
-        };
+        }, 'spotify_id');
 
-        const userRows = await upsertSupabaseTable('users', userPayload, 'spotify_id');
         const user = userRows?.[0] ?? null;
 
         if (user) {
-            // 5) Guarda/actualiza sus tokens en user_profiles, vinculados al id (uuid) de users
+            // 4) Guarda/actualiza sus tokens en `user_profiles`, vinculados por user_id
             await upsertSupabaseTable('user_profiles', {
                 user_id: user.id,
                 token_spotify: accessToken,
                 refresh_token_spotify: refreshToken ?? null
             }, 'user_id');
 
-            req.session.spotify_user = user;
+            req.session.spotify_user = user; // Se usa después para renovar el token si vence
         } else {
-            console.warn('No se pudo guardar el usuario en Supabase. Revisá SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY en el .env.');
+            console.warn('No se pudo guardar el usuario en Supabase. Revisá SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY.');
         }
-
-        console.log('Usuario logueado:', perfilSpotify.id, perfilSpotify.display_name);
 
         res.redirect('/pages/dashboard.html');
 
@@ -208,24 +183,19 @@ app.get('/auth/spotify/callback', async (req, res) => {
     }
 });
 
-// Ruta que devuelve las canciones escuchadas recientemente por el usuario
+// --- API propia ---
+
 app.get('/api/canciones', async (req, res) => {
-    // Recupera el token guardado cuando el usuario autorizó Spotify
     let token = req.session.spotify_access_token;
 
     try {
-        // Pide a Spotify las canciones recientes, usando el token como credencial
         const response = await axios.get('https://api.spotify.com/v1/me/player/recently-played', {
-            headers: {
-                'Authorization': `Bearer ${token}` // Formato estándar para mandar el token
-            }
+            headers: { 'Authorization': `Bearer ${token}` }
         });
-
-        // Si todo sale bien, le devuelve esos datos al navegador
         res.json(response.data);
 
     } catch (error) {
-        // Si el token venció (error 401), usa el refresh_token para pedir uno nuevo y reintenta
+        // Token vencido (401): renueva con el refresh_token y reintenta una vez
         if (error.response?.status === 401) {
             const userId = req.session.spotify_user?.id;
             const tokenNuevo = userId ? await renovarAccessTokenSpotify(userId) : null;
@@ -234,9 +204,7 @@ app.get('/api/canciones', async (req, res) => {
                 req.session.spotify_access_token = tokenNuevo;
                 try {
                     const reintento = await axios.get('https://api.spotify.com/v1/me/player/recently-played', {
-                        headers: {
-                            'Authorization': `Bearer ${tokenNuevo}`
-                        }
+                        headers: { 'Authorization': `Bearer ${tokenNuevo}` }
                     });
                     return res.json(reintento.data);
                 } catch (errorReintento) {
@@ -245,13 +213,11 @@ app.get('/api/canciones', async (req, res) => {
             }
         }
 
-        // Si algo falla (token vencido y sin refresh, sin permiso, etc.), avisa sin romper el servidor
         console.error(error.response?.data || error.message);
         res.status(500).json({ error: 'No se pudieron obtener las canciones' });
     }
 });
 
-// Arranca el servidor en el puerto definido
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
