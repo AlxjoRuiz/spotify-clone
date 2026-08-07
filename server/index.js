@@ -67,6 +67,67 @@ async function upsertSupabaseTable(table, payload, onConflict) {
     return response.data;
 }
 
+// Lee filas de una tabla de Supabase con filtros tipo "columna=valor"
+// Ej: leerSupabase('user_profiles', { user_id: 'abc-123' })
+async function leerSupabase(table, filtros) {
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+        return null;
+    }
+
+    const query = new URLSearchParams();
+    for (const [columna, valor] of Object.entries(filtros)) {
+        query.append(columna, `eq.${valor}`);
+    }
+
+    const url = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/${table}?${query.toString()}`;
+    const response = await axios.get(url, {
+        headers: {
+            apikey: SUPABASE_SERVICE_ROLE_KEY,
+            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
+        }
+    });
+
+    return response.data;
+}
+
+// Pide a Spotify un access_token nuevo usando el refresh_token guardado en Supabase
+async function renovarAccessTokenSpotify(userId) {
+    try {
+        const filas = await leerSupabase('user_profiles', { user_id: userId });
+        const refreshToken = filas?.[0]?.refresh_token_spotify;
+
+        if (!refreshToken) {
+            return null;
+        }
+
+        const response = await axios.post('https://accounts.spotify.com/api/token',
+            new URLSearchParams({
+                grant_type: 'refresh_token',
+                refresh_token: refreshToken,
+                client_id: SPOTIFY_CLIENT_ID,
+                client_secret: SPOTIFY_CLIENT_SECRET
+            }),
+            {
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+            }
+        );
+
+        const nuevoToken = response.data.access_token;
+
+        // Guarda el token nuevo (y el refresh_token por si Spotify lo rotó)
+        await upsertSupabaseTable('user_profiles', {
+            user_id: userId,
+            token_spotify: nuevoToken,
+            refresh_token_spotify: response.data.refresh_token ?? refreshToken
+        }, 'user_id');
+
+        return nuevoToken;
+    } catch (error) {
+        console.error('Error al renovar token:', error.response?.data || error.message);
+        return null;
+    }
+}
+
 // Ruta que arranca el login/autorización con Spotify
 app.get('/auth/spotify', (req, res) => {
     // Arma los parámetros que Spotify necesita en la URL de autorización
@@ -100,6 +161,7 @@ app.get('/auth/spotify/callback', async (req, res) => {
 
         // Guarda el token en la sesión, para usarlo después en pedidos a la API de Spotify
         const accessToken = response.data.access_token;
+        const refreshToken = response.data.refresh_token;
         req.session.spotify_access_token = accessToken;
 
         // 2) Con ese token, le preguntamos a Spotify "¿quién sos?"
@@ -113,21 +175,29 @@ app.get('/auth/spotify/callback', async (req, res) => {
         // 3) perfilResponse.data trae el perfil: { id, display_name, email, ... }
         const perfilSpotify = perfilResponse.data;
 
+        // 4) Guarda/actualiza el usuario en Supabase (busca por spotify_id, crea si no existe)
         const userPayload = {
             spotify_id: perfilSpotify.id,
             display_name: perfilSpotify.display_name ?? null,
             email: perfilSpotify.email ?? null
         };
 
-        const userRows = await upsertSupabaseTable('User', userPayload, 'spotify_id');
-        const user = userRows?.[0] ?? userPayload;
+        const userRows = await upsertSupabaseTable('users', userPayload, 'spotify_id');
+        const user = userRows?.[0] ?? null;
 
-        await upsertSupabaseTable('UserProfile', {
-            user_id: user.id ?? user.spotify_id,
-            spotify_access_token: accessToken
-        }, 'user_id');
+        if (user) {
+            // 5) Guarda/actualiza sus tokens en user_profiles, vinculados al id (uuid) de users
+            await upsertSupabaseTable('user_profiles', {
+                user_id: user.id,
+                token_spotify: accessToken,
+                refresh_token_spotify: refreshToken ?? null
+            }, 'user_id');
 
-        req.session.spotify_user = user;
+            req.session.spotify_user = user;
+        } else {
+            console.warn('No se pudo guardar el usuario en Supabase. Revisá SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY en el .env.');
+        }
+
         console.log('Usuario logueado:', perfilSpotify.id, perfilSpotify.display_name);
 
         res.redirect('/pages/dashboard.html');
@@ -141,7 +211,7 @@ app.get('/auth/spotify/callback', async (req, res) => {
 // Ruta que devuelve las canciones escuchadas recientemente por el usuario
 app.get('/api/canciones', async (req, res) => {
     // Recupera el token guardado cuando el usuario autorizó Spotify
-    const token = req.session.spotify_access_token;
+    let token = req.session.spotify_access_token;
 
     try {
         // Pide a Spotify las canciones recientes, usando el token como credencial
@@ -155,7 +225,27 @@ app.get('/api/canciones', async (req, res) => {
         res.json(response.data);
 
     } catch (error) {
-        // Si algo falla (token vencido, sin permiso, etc.), avisa sin romper el servidor
+        // Si el token venció (error 401), usa el refresh_token para pedir uno nuevo y reintenta
+        if (error.response?.status === 401) {
+            const userId = req.session.spotify_user?.id;
+            const tokenNuevo = userId ? await renovarAccessTokenSpotify(userId) : null;
+
+            if (tokenNuevo) {
+                req.session.spotify_access_token = tokenNuevo;
+                try {
+                    const reintento = await axios.get('https://api.spotify.com/v1/me/player/recently-played', {
+                        headers: {
+                            'Authorization': `Bearer ${tokenNuevo}`
+                        }
+                    });
+                    return res.json(reintento.data);
+                } catch (errorReintento) {
+                    console.error(errorReintento.response?.data || errorReintento.message);
+                }
+            }
+        }
+
+        // Si algo falla (token vencido y sin refresh, sin permiso, etc.), avisa sin romper el servidor
         console.error(error.response?.data || error.message);
         res.status(500).json({ error: 'No se pudieron obtener las canciones' });
     }
