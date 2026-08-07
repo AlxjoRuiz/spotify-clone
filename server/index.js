@@ -175,7 +175,7 @@ app.get('/auth/spotify/callback', async (req, res) => {
             console.warn('No se pudo guardar el usuario en Supabase. Revisá SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY.');
         }
 
-        res.redirect('/pages/dashboard.html');
+        res.redirect(`/pages/dashboard.html?nombre=${encodeURIComponent(perfilSpotify.display_name ?? '')}`);
 
     } catch (error) {
         console.error(error.response?.data || error.message);
