@@ -51,13 +51,13 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 async function upsertSupabaseTable(table, payload, onConflict) {
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return null;
 
-    const url = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/${table}`;
+    const url = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/${table}${onConflict ? `?on_conflict=${onConflict}` : ''}`;
     const response = await axios.post(url, payload, {
         headers: {
             apikey: SUPABASE_SERVICE_ROLE_KEY,
             Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
             'Content-Type': 'application/json',
-            Prefer: `resolution=merge-duplicates,return=representation${onConflict ? `,on_conflict=${onConflict}` : ''}`
+            Prefer: 'resolution=merge-duplicates,return=representation'
         }
     });
     return response.data;
