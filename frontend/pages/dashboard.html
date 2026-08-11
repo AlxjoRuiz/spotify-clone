@@ -4,35 +4,63 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Spotify</title>
+    <!-- Hoja de estilos del dashboard (tema Spotify oscuro) -->
     <link rel="stylesheet" href="../styles/dashboard.css">
+    <!-- Iconos de Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.0/css/all.min.css">
+    <!-- Tipografía Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-    <body>
-        <div class="dashboard-container">
-            <div class="sidebar">
-                <h2>Spotify Dashboard</h2>
-                <div class="buscador">
-                    <input type="text" id="input-buscar" placeholder="Buscar canciones...">
-                    <button id="btn-buscar">Buscar</button>
-                </div>
-                <nav>
-                    ...
-                </nav>
-                <nav>
-                    <ul>                  
-                        <li><a href="#">Inicio</a></li>
-                        <li><a href="#">Explorar</a></li>
-                        <li><a href="#">Biblioteca</a></li>
-                        <li><a href="#">Perfil</a></li>
-                    </ul>
-                </nav>
-            </div> 
-            <div class="main-content">
-                <h1>¡Hola! ¿Como estas?</h1>
-                <h2>Para empezar</h2>
-                <div id="playlists"></div>
-            </div>     
+<body>
+    <!-- Contenedor general: grilla de sidebar + header + contenido -->
+    <div class="dashboard-container">
+
+        <!-- ======== SIDEBAR ======== -->
+        <div class="sidebar">
+            <h2>Spotify Dashboard</h2>
+
+            <!-- Buscador de música -->
+            <div class="buscador">
+                <input type="text" id="input-buscar" placeholder="Buscar canciones...">
+                <button id="btn-buscar">Buscar</button>
+            </div>
+
+            <!-- Navegación principal -->
+            <nav>
+                <ul>                  
+                    <li><a href="#">Inicio</a></li>
+                    <li><a href="#">Explorar</a></li>
+                    <li><a href="#">Biblioteca</a></li>
+                    <li><a href="#">Perfil</a></li>
+                </ul>
+            </nav>
         </div>
 
-        <script src="../scripts/dashboard.js"></script>
-    </body>
+        <!-- ======== HEADER (barra superior) ======== -->
+        <div class="header">
+            <!-- Saludo dinámico según la hora (mañana/tarde/noche) -->
+            <span class="greeting" id="greeting">¡Hola!</span>
+
+            <!-- Perfil del usuario logueado -->
+            <div class="perfil">
+                <i class="fa-solid fa-user"></i>
+                <span id="nombre-perfil">Usuario</span>
+            </div>
+        </div>
+
+        <!-- ======== CONTENIDO PRINCIPAL ======== -->
+        <div class="main-content">
+            <!-- Título de la sección de playlists -->
+            <h2>Para empezar</h2>
+            <!-- Acá se cargan las playlists populares desde el JS -->
+            <div id="playlists"></div>
+        </div>
+
+    </div>
+
+    <!-- Script que maneja playlists, búsqueda y saludo -->
+    <script src="../scripts/dashboard.js"></script>
+</body>
 </html>

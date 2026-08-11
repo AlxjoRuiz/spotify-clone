@@ -203,3 +203,62 @@ body {
     font-weight: 400;
     font-size: 0.85rem;
 }
+
+/* Link activo del sidebar */
+.sidebar a.activo {
+    color: #1DB954;
+}
+
+/* Vistas del dashboard (se muestra solo la activa) */
+.vista {
+    display: none;
+    grid-column: 1 / -1;
+}
+
+.vista.activa {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 20px;
+    width: 100%;
+}
+
+/* Título de cada sección */
+.vista-titulo {
+    grid-column: 1 / -1;
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin: 10px 0 15px;
+}
+
+/* Botón de play que aparece al hover en la tarjeta */
+.btn-play {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #1DB954;
+    border: none;
+    color: #000000;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    z-index: 2;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.tarjeta-cancion:hover .btn-play {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.btn-play:hover {
+    transform: scale(1.1);
+    background: #1ed760;
+}

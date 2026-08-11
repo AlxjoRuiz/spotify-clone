@@ -14,7 +14,7 @@ function verificarLogin(req, res, next) {
     if (req.session.spotify_access_token) {
         next();
     } else {
-        res.redirect('/pages/index.html');
+        res.redirect('/pages/login.html');
     }
 };
 
