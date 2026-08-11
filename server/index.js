@@ -304,6 +304,14 @@ app.get('/auth/spotify/callback', async (req, res) => {
 });
 
 
+// --- Cerrar sesión ---
+
+app.get('/auth/logout', (req, res) => {
+    req.session.destroy(() => {
+        res.redirect('/pages/login.html');
+    });
+});
+
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });

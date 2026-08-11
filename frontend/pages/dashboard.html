@@ -30,7 +30,7 @@
             <!-- Navegación principal -->
             <nav>
                 <ul>                  
-                    <li><a href="#">Inicio</a></li>
+                    <li><a href="#" class="activo">Inicio</a></li>
                     <li><a href="#">Explorar</a></li>
                     <li><a href="#">Biblioteca</a></li>
                     <li><a href="#">Perfil</a></li>
@@ -43,24 +43,109 @@
             <!-- Saludo dinámico según la hora (mañana/tarde/noche) -->
             <span class="greeting" id="greeting">¡Hola!</span>
 
-            <!-- Perfil del usuario logueado -->
+            <!-- Perfil del usuario logueado + botón logout -->
             <div class="perfil">
                 <i class="fa-solid fa-user"></i>
                 <span id="nombre-perfil">Usuario</span>
+                <button id="btn-logout" title="Cerrar sesión">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
             </div>
         </div>
 
-        <!-- ======== CONTENIDO PRINCIPAL ======== -->
+        <!--CONTENIDO PRINCIPAL (vistas)->
         <div class="main-content">
-            <!-- Título de la sección de playlists -->
-            <h2>Para empezar</h2>
-            <!-- Acá se cargan las playlists populares desde el JS -->
-            <div id="playlists"></div>
+
+            <!-- Vista Inicio: playlists populares -->
+            <div class="vista activa" id="vista-inicio">
+                <h2 class="vista-titulo">Para empezar</h2>
+                <div id="playlists"></div>
+            </div>
+
+            <!-- Vista Explorar: resultados de búsqueda -->
+            <div class="vista" id="vista-explorar">
+                <h2 class="vista-titulo">Buscá tu música favorita</h2>
+            </div>
+
+            <!-- Vista Biblioteca: canciones escuchadas recientemente -->
+            <div class="vista" id="vista-biblioteca">
+                <h2 class="vista-titulo">Escuchado recientemente</h2>
+                <div id="canciones-recientes"></div>
+            </div>
+
+            <!-- Vista Perfil: datos del usuario -->
+            <div class="vista" id="vista-perfil">
+                <h2 class="vista-titulo">Tu perfil</h2>
+                <div class="perfil-container">
+                    <div class="perfil-avatar">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div class="perfil-info">
+                        <p class="perfil-label">Nombre de usuario</p>
+                        <p class="perfil-nombre" id="perfil-nombre">Usuario</p>
+                    </div>
+                    <div class="perfil-info">
+                        <p class="perfil-label">Tipo de cuenta</p>
+                        <p class="perfil-dato">Free</p>
+                    </div>
+                    <div class="perfil-info">
+                        <p class="perfil-label">Conectado con</p>
+                        <p class="perfil-dato">Spotify</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- REPRODUCTOR (barra inferior) -->
+        <div class="reproductor">
+            <!-- Info de la canción actual -->
+            <div class="info-cancion">
+                <img id="reproductor-portada" src="" alt="">
+                <div class="texto">
+                    <span class="nombre" id="reproductor-nombre">Sin reproducir</span>
+                    <span class="artista" id="reproductor-artista">-</span>
+                </div>
+            </div>
+
+            <!-- Controles centrales del reproductor -->
+            <div class="controles-centrales">
+                <!-- Botones de control -->
+                <div class="botones-control">
+                    <button id="btn-anterior" title="Anterior">
+                        <i class="fa-solid fa-backward-step"></i>
+                    </button>
+                    <button id="btn-play" title="Reproducir">
+                        <i class="fa-solid fa-play"></i>
+                    </button>
+                    <button id="btn-siguiente" title="Siguiente">
+                        <i class="fa-solid fa-forward-step"></i>
+                    </button>
+                </div>
+
+                <!-- Barra de progreso -->
+                <div class="progreso-container">
+                    <span id="tiempo-actual">0:00</span>
+                    <input type="range" id="barra-progreso" value="0" max="100" step="0.1">
+                    <span id="tiempo-total">0:00</span>
+                </div>
+            </div>
+
+            <!-- Control de volumen -->
+            <div class="control-volumen">
+                <button id="btn-volumen" title="Silenciar">
+                    <i class="fa-solid fa-volume-high"></i>
+                </button>
+                <input type="range" id="barra-volumen" value="70" max="100" step="1">
+            </div>
+
+            <!-- Elemento audio oculto (solo para manejar el sonido) -->
+            <audio id="audio-control"></audio>
         </div>
 
     </div>
 
-    <!-- Script que maneja playlists, búsqueda y saludo -->
+    <!-- Script que maneja vistas, playlists, búsqueda y saludo -->
     <script src="../scripts/dashboard.js"></script>
 </body>
 </html>

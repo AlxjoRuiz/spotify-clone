@@ -1,6 +1,4 @@
-/* ========================================
-   TEMA SPOTIFY
-   ======================================== */
+/* TEMA SPOTIFY */
 
 body {
     margin: 0;
@@ -9,23 +7,20 @@ body {
     color: #FFFFFF;
 }
 
-/* ========================================
-   LAYOUT
-   ======================================== */
+/* LAYOUT */
 
 .dashboard-container {
     display: grid;
     grid-template-columns: 240px 1fr;
-    grid-template-rows: auto 1fr;
+    grid-template-rows: auto 1fr auto;   /* header / contenido / reproductor */
     grid-template-areas:
         "sidebar header"
-        "sidebar main";
+        "sidebar main"
+        "sidebar reproductor";
     height: 100vh;
 }
 
-/* ========================================
-   SIDEBAR
-   ======================================== */
+/* SIDEBAR */
 
 .sidebar {
     grid-area: sidebar;
@@ -90,9 +85,7 @@ body {
     transform: scale(1.05);
 }
 
-/* ========================================
-   HEADER (barra superior)
-   ======================================== */
+/* HEADER (barra superior */
 
 .header {
     grid-area: header;
@@ -119,9 +112,21 @@ body {
     cursor: pointer;
 }
 
-/* ========================================
-   CONTENIDO PRINCIPAL
-   ======================================== */
+.header .perfil #btn-logout {
+    background: none;
+    border: none;
+    color: #B3B3B3;
+    cursor: pointer;
+    font-size: 1rem;
+    margin-left: 4px;
+    transition: color 0.2s;
+}
+
+.header .perfil #btn-logout:hover {
+    color: #FFFFFF;
+}
+
+/* CONTENIDO PRINCIPAL */
 
 .main-content {
     grid-area: main;
@@ -141,10 +146,9 @@ body {
     margin: 20px 0 10px;
 }
 
-/* ========================================
+/*
    TARJETAS (canciones / playlists)
-   MANTIENE EL EFECTO DEGRADADO/HOVER
-   ======================================== */
+   MANTIENE EL EFECTO DEGRADADO/HOVER */
 
 .tarjeta-cancion {
     background-color: #181818;     /* gris oscuro Spotify */
@@ -261,4 +265,273 @@ body {
 .btn-play:hover {
     transform: scale(1.1);
     background: #1ed760;
+}
+
+/*TARJETAS: tamaño fijo + texto recortado */
+
+/* Cada tarjeta ocupa el mismo espacio y no crece */
+.tarjeta-cancion {
+    width: 100%;
+    max-width: 180px;            /* tope de ancho para que no se estire */
+    aspect-ratio: auto;
+    overflow: hidden;            /* oculta lo que sobresalde */
+}
+
+/* Portada siempre cuadrada y centrada */
+.tarjeta-cancion img {
+    width: 100%;
+    aspect-ratio: 1;             /* cuadrado perfecto */
+    object-fit: cover;           /* recorta la imagen sin deformarla */
+}
+
+/* Textos recortados con puntos suspensivos */
+.tarjeta-cancion p {
+    white-space: nowrap;         /* no baja a la siguiente línea */
+    overflow: hidden;            /* oculta lo que sobra */
+    text-overflow: ellipsis;     /* pone "..." al final si es muy largo */
+    max-width: 100%;             /* no supera el ancho de la tarjeta */
+    margin: 6px 0 0;
+}
+
+/* Subtítulo (artista/dueño) en gris más chico */
+.tarjeta-cancion p:last-child {
+    font-size: 0.8rem;
+    color: #B3B3B3;
+}
+
+/*REPRODUCTOR (barra inferior)*/
+.reproductor {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    background: #181818;
+    border-top: 1px solid #282828;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    gap: 16px;
+}
+
+/* Info de la canción que suena */
+.reproductor .info-cancion {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 180px;
+    width: 30%;
+}
+
+.reproductor .info-cancion img {
+    width: 50px;
+    height: 50px;
+    border-radius: 4px;
+}
+
+.reproductor .info-cancion .texto {
+    display: flex;
+    flex-direction: column;
+}
+
+.reproductor .info-cancion .texto .nombre {
+    font-weight: 600;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+}
+
+.reproductor .info-cancion .texto .artista {
+    font-size: 0.75rem;
+    color: #B3B3B3;
+}
+
+/* Controles centrales (botones + barra de progreso) */
+.controles-centrales {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    max-width: 600px;
+}
+
+.botones-control {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.botones-control button {
+    background: none;
+    border: none;
+    color: #B3B3B3;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: color 0.2s;
+    padding: 8px;
+}
+
+.botones-control button:hover {
+    color: #FFFFFF;
+}
+
+/* Boton play más grande */
+#btn-play {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    transition: transform 0.1s !important;
+}
+
+#btn-play:hover {
+    transform: scale(1.05);
+}
+
+/* Barra de progreso con tiempos */
+.progreso-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.progreso-container span {
+    font-size: 0.75rem;
+    color: #B3B3B3;
+    min-width: 35px;
+    text-align: center;
+}
+
+/* Input range para la barra de progreso */
+#barra-progreso {
+    flex: 1;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #4D4D4D;
+    border-radius: 2px;
+    cursor: pointer;
+    outline: none;
+}
+
+#barra-progreso::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #FFFFFF;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+#barra-progreso:hover::-webkit-slider-thumb {
+    opacity: 1;
+}
+
+/* Control de volumen */
+.control-volumen {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 140px;
+    justify-content: flex-end;
+}
+
+#btn-volumen {
+    background: none;
+    border: none;
+    color: #B3B3B3;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+#btn-volumen:hover {
+    color: #FFFFFF;
+}
+
+#barra-volumen {
+    width: 90px;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #4D4D4D;
+    border-radius: 2px;
+    cursor: pointer;
+    outline: none;
+}
+
+#barra-volumen::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #FFFFFF;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+#barra-volumen:hover::-webkit-slider-thumb {
+    opacity: 1;
+}
+
+/* Elemento audio oculto (solo para el sonido) */
+.reproductor #audio-control {
+    display: none;
+}
+
+/* Vista Perfil */
+.perfil-container {
+    grid-column: 1 / -1;
+    background: #181818;
+    border-radius: 8px;
+    padding: 32px;
+    max-width: 500px;
+}
+
+.perfil-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: #282828;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    color: #B3B3B3;
+    margin-bottom: 24px;
+}
+
+.perfil-info {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #282828;
+}
+
+.perfil-info:last-child {
+    border-bottom: none;
+}
+
+.perfil-label {
+    font-size: 0.75rem;
+    color: #B3B3B3;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0 0 4px;
+}
+
+.perfil-nombre,
+.perfil-dato {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
 }
