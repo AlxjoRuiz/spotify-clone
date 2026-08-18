@@ -1,7 +1,4 @@
-// ========================================
 // USUARIO: leer nombre desde URL (Spotify) o localStorage
-// ========================================
-
 // Intenta tomar el nombre de la URL (lo manda el servidor tras login con Spotify)
 const params = new URLSearchParams(window.location.search);
 let nombreUsuario = params.get('nombre');
@@ -24,11 +21,7 @@ if (params.get('nombre')) {
 // Muestra el nombre en el perfil del header
 document.querySelector('#nombre-perfil').textContent = nombreUsuario;
 
-
-// ========================================
 // CERRAR SESIÓN
-// ========================================
-
 const btnLogout = document.querySelector('#btn-logout');
 
 btnLogout.addEventListener('click', () => {
@@ -36,10 +29,7 @@ btnLogout.addEventListener('click', () => {
 });
 
 
-// ========================================
 // SALUDO DINÁMICO SEGÚN LA HORA
-// ========================================
-
 // Elemento del saludo en el header
 const greeting = document.querySelector('#greeting');
 
@@ -60,10 +50,8 @@ if (hora >= 6 && hora < 12) {
 greeting.textContent = `${textoSaludo}, ${nombreUsuario}`;
 
 
-// ========================================
-// SISTEMA DE VISTAS DEL SIDEBAR
-// ========================================
 
+// SISTEMA DE VISTAS DEL SIDEBAR
 // Toma todos los links del sidebar
 const linksSidebar = document.querySelectorAll('.sidebar a');
 
@@ -97,11 +85,7 @@ linksSidebar.forEach(link => {
     });
 });
 
-
-// ========================================
 // REPRODUCTOR PERSONALIZADO
-// ========================================
-
 // Elementos del reproductor
 const audio = document.querySelector('#audio-control');
 const reproPortada = document.querySelector('#reproductor-portada');
@@ -183,10 +167,8 @@ function reproducirPreview(previewUrl, nombre, artista, portada) {
     reproducirPorIndice(colaCanciones.length - 1);
 }
 
-// ========================================
-// EVENTOS DEL REPRODUCTOR
-// ========================================
 
+// EVENTOS DEL REPRODUCTOR
 // Play / Pausa
 btnPlay.addEventListener('click', () => {
     if (colaCanciones.length === 0) return;
@@ -269,11 +251,7 @@ function actualizarIconoVolumen() {
 // Volumen inicial al 70%
 audio.volume = 0.7;
 
-
-// ========================================
 // INICIO: PLAYLETS POPULARES
-// ========================================
-
 // Pide las playlists populares y las dibuja en la sección "Para empezar"
 fetch('/api/playlists-populares')
     // Convierte la respuesta de JSON a objeto
@@ -322,11 +300,7 @@ fetch('/api/playlists-populares')
     })
     .catch(error => console.error('Error al cargar playlists:', error));
 
-
-// ========================================
 // EXPLORAR: BUSCADOR DE MÚSICA
-// ========================================
-
 // Toma el input y el button del sidebar
 const inputBuscar = document.querySelector('#input-buscar');
 const btnBuscar = document.querySelector('#btn-buscar');
@@ -400,10 +374,8 @@ btnBuscar.addEventListener('click', () => {
 });
 
 
-// ========================================
-// BIBLIOTECA: CANCIONES RECIENTES
-// ========================================
 
+// BIBLIOTECA: CANCIONES RECIENTES
 // Crea una tarjeta de canción y la devuelve como elemento
 function crearTarjetaCancion(track) {
     if (!track.album || !track.album.images || track.album.images.length === 0) return null;

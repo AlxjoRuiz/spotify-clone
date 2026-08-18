@@ -1,7 +1,4 @@
-// ========================================
 // LOGIN RÁPIDO PARA DESARROLLO
-// ========================================
-
 // Toma el formulario del HTML
 const formLogin = document.querySelector('#form-login-dev');
 
