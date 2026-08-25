@@ -53,7 +53,7 @@
             </div>
         </div>
 
-        <!--CONTENIDO PRINCIPAL (vistas)->
+        <!--CONTENIDO PRINCIPAL (vistas)-->
         <div class="main-content">
 
             <!-- Vista Inicio: playlists populares -->
@@ -73,25 +73,21 @@
                 <div id="canciones-recientes"></div>
             </div>
 
-            <!-- Vista Perfil: datos del usuario -->
+            <!-- Vista Perfil: datos reales del usuario desde Spotify -->
             <div class="vista" id="vista-perfil">
                 <h2 class="vista-titulo">Tu perfil</h2>
-                <div class="perfil-container">
-                    <div class="perfil-avatar">
-                        <i class="fa-solid fa-user"></i>
+                <div class="perfil-container" id="perfil-container">
+                    <!-- Se llena dinámicamente con JavaScript -->
+                    <div class="perfil-loading">
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+                        <p>Cargando perfil...</p>
                     </div>
-                    <div class="perfil-info">
-                        <p class="perfil-label">Nombre de usuario</p>
-                        <p class="perfil-nombre" id="perfil-nombre">Usuario</p>
-                    </div>
-                    <div class="perfil-info">
-                        <p class="perfil-label">Tipo de cuenta</p>
-                        <p class="perfil-dato">Free</p>
-                    </div>
-                    <div class="perfil-info">
-                        <p class="perfil-label">Conectado con</p>
-                        <p class="perfil-dato">Spotify</p>
-                    </div>
+                </div>
+
+                <!-- Top artistas del usuario -->
+                <h2 class="vista-titulo">Tus artistas favoritos</h2>
+                <div id="top-artistas">
+                    <!-- Se llena dinámicamente con JavaScript -->
                 </div>
             </div>
 

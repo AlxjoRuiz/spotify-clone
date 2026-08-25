@@ -535,3 +535,233 @@ body {
     font-weight: 600;
     margin: 0;
 }
+
+/* Título de cada sección dentro de Explorar (Canciones, Artistas, etc.) */
+.seccion-titulo {
+    grid-column: 1 / -1;          /* ocupa todo el ancho */
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 15px 0 5px;
+}
+
+/* Tarjetas de artista con foto circular (como Spotify) */
+.tarjeta-artista img {
+    border-radius: 50%;
+}
+
+/* Mensaje cuando la búsqueda no devuelve nada */
+.sin-resultados {
+    grid-column: 1 / -1;
+    color: #B3B3B3;
+}
+
+/* ========================================
+   PERFIL DINÁMICO
+   ======================================== */
+
+/* Avatar del perfil: puede ser foto de Spotify o icono */
+.perfil-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Badge de Premium en el perfil */
+.perfil-dato.premium {
+    color: #1DB954;              /* verde Spotify */
+    font-weight: 700;
+}
+
+/* Estado de carga del perfil */
+.perfil-loading {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 40px 0;
+    color: #B3B3B3;
+}
+
+.perfil-loading i {
+    font-size: 2rem;
+    color: #1DB954;
+}
+
+/* ========================================
+   TOP ARTISTAS
+   ======================================== */
+
+/* Tarjetas de artista con foto circular */
+#top-artistas {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 20px;
+}
+
+/* ========================================
+   LOADING / SPINNER GLOBAL
+   ======================================== */
+
+/* Contenedor de carga genérico */
+.loading-container {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 60px 0;
+    color: #B3B3B3;
+}
+
+.loading-container i {
+    font-size: 2.5rem;
+    color: #1DB954;
+}
+
+/* ========================================
+   RESPONSIVE DESIGN (MÓVIL)
+   ======================================== */
+
+/* Tablets y pantallas medianas */
+@media (max-width: 1024px) {
+    .dashboard-container {
+        grid-template-columns: 200px 1fr;
+    }
+}
+
+/* Móviles: sidebar colapsa a iconos, layout apilado */
+@media (max-width: 768px) {
+    .dashboard-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto 1fr auto;
+        grid-template-areas:
+            "header"
+            "sidebar"
+            "main"
+            "reproductor";
+    }
+
+    /* Sidebar horizontal en móvil */
+    .sidebar {
+        display: flex;
+        flex-direction: column;
+        padding: 12px 16px;
+        gap: 8px;
+    }
+
+    .sidebar h2 {
+        display: none;              /* oculta el título para ahorrar espacio */
+    }
+
+    /* Buscador ocupa todo el ancho */
+    .buscador {
+        margin-bottom: 8px;
+    }
+
+    .buscador input {
+        flex: 1;
+    }
+
+    /* Navegación horizontal */
+    .sidebar nav ul {
+        display: flex;
+        gap: 4px;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        justify-content: center;
+    }
+
+    .sidebar nav ul li a {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+        border-radius: 20px;
+        background: #282828;
+    }
+
+    .sidebar nav ul li a.activo {
+        background: #1DB954;
+        color: #000000;
+    }
+
+    /* Header más compacto */
+    .header {
+        padding: 12px 16px;
+    }
+
+    .header .greeting {
+        font-size: 1.1rem;
+    }
+
+    /* Contenido principal con menos padding */
+    .main-content {
+        padding: 16px;
+    }
+
+    /* Tarjetas más pequeñas */
+    .vista.activa {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 12px;
+    }
+
+    .tarjeta-cancion {
+        max-width: 160px;
+    }
+
+    /* Perfil más compacto */
+    .perfil-container {
+        padding: 20px;
+        max-width: 100%;
+    }
+
+    /* Reproductor: se apila en móvil */
+    .reproductor {
+        flex-direction: column;
+        gap: 8px;
+        padding: 8px 16px;
+    }
+
+    .reproductor .info-cancion {
+        min-width: auto;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .controles-centrales {
+        max-width: 100%;
+    }
+
+    .control-volumen {
+        min-width: auto;
+        justify-content: center;
+    }
+
+    #barra-volumen {
+        width: 120px;
+    }
+}
+
+/* Muy pequeños (celulares) */
+@media (max-width: 480px) {
+    .vista.activa {
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        gap: 8px;
+    }
+
+    .tarjeta-cancion {
+        max-width: 140px;
+        padding: 10px;
+    }
+
+    .header .perfil span {
+        display: none;              /* oculta el nombre, solo muestra foto + logout */
+    }
+
+    .botones-control {
+        gap: 10px;
+    }
+}

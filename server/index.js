@@ -19,7 +19,7 @@ function verificarLogin(req, res, next) {
 };
 
 app.use(session({
-    secret: 'un_secreto_cualquiera', // En producción, mover al .env
+    secret: process.env.SESSION_SECRET || 'un_secreto_cualquiera', // Si falta en .env, usa un fallback
     resave: false,
     saveUninitialized: true
 }));
@@ -216,23 +216,73 @@ app.get('/api/playlists-populares', async (req, res) => {
     }
 });
 
-// Ruta que busca canciones/artistas en Spotify según lo que escriba el usuario
+// Ruta que busca canciones, artistas, álbumes y playlists según lo que escriba el usuario
 app.get('/api/buscar', async (req, res) => {
 
     try {
         // Toma el texto que llegó desde el frontend (?q=...)
         const q = req.query.q;
 
-        // Pide a Spotify los resultados de búsqueda (type=track devuelve canciones)
-        const data = await pedirASpotify(`https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=track&limit=20&market=CO`, req);
+        // Pide a Spotify resultados de los cuatro tipos a la vez (separados por coma)
+        // El limit se aplica por cada tipo (8 canciones, 8 artistas, etc.)
+        const data = await pedirASpotify(`https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=track,artist,album,playlist&limit=8&market=CO`, req);
 
-        // Devuelve los tracks encontrados
+        // Devuelve todos los resultados agrupados por tipo
         res.json(data);
 
     } catch (error) {
         // Si algo falla, avisa sin romper el servidor
         console.error(error.response?.data || error.message);
         res.status(500).json({ error: 'No se pudo buscar' });
+    }
+});
+
+// Ruta que devuelve el perfil completo del usuario desde Spotify
+// Incluye: nombre, email, imagen, tipo de cuenta, país, seguidores
+app.get('/api/perfil', async (req, res) => {
+
+    try {
+        // Pide a Spotify los datos del usuario logueado usando el helper
+        // (ya maneja la renovación automática del token si vence)
+        const perfil = await pedirASpotify('https://api.spotify.com/v1/me', req);
+
+        // Extrae solo los campos que necesitamos y los formatea
+        res.json({
+            nombre: perfil.display_name ?? 'Sin nombre',
+            email: perfil.email ?? 'Sin email',
+            imagen: perfil.images?.[0]?.url ?? null,          // foto de perfil (la más grande)
+            tipo_cuenta: perfil.product ?? 'free',             // "premium" o "free"
+            pais: perfil.country ?? 'Desconocido',
+            seguidores: perfil.followers?.total ?? 0,
+            id_spotify: perfil.id
+        });
+
+    } catch (error) {
+        console.error(error.response?.data || error.message);
+        res.status(500).json({ error: 'No se pudo obtener el perfil' });
+    }
+});
+
+// Ruta que devuelve los artistas más escuchados del usuario
+// Se usa el endpoint "top" de Spotify con diferentes rangos de tiempo
+app.get('/api/top-artistas', async (req, res) => {
+
+    try {
+        // "time_range" indica el período: short_term (~4 semanas), medium_term (~6 meses), long_term (todo)
+        // Por defecto usamos medium_term (representa mejor los gustos actuales)
+        const timeRange = req.query.time_range || 'medium_term';
+
+        const data = await pedirASpotify(
+            `https://api.spotify.com/v1/me/top/artists?time_range=${timeRange}&limit=10`,
+            req
+        );
+
+        // Devuelve los artistas con sus datos principales
+        res.json(data);
+
+    } catch (error) {
+        console.error(error.response?.data || error.message);
+        res.status(500).json({ error: 'No se pudieron obtener los artistas' });
     }
 });
 
@@ -243,7 +293,7 @@ app.get('/auth/spotify', (req, res) => {
         client_id: SPOTIFY_CLIENT_ID,
         response_type: 'code',
         redirect_uri: SPOTIFY_REDIRECT_URI,
-        scope: 'user-read-private user-read-email user-read-recently-played'
+        scope: 'user-read-private user-read-email user-read-recently-played user-top-read'
     });
     res.redirect(`https://accounts.spotify.com/authorize?${params.toString()}`);
 });

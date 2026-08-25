@@ -101,7 +101,7 @@ const btnVolumen = document.querySelector('#btn-volumen');
 // Barra de progreso y tiempo
 const barraProgreso = document.querySelector('#barra-progreso');
 const tiempoActual = document.querySelector('#tiempo-actual');
-const tiempoTiempoTotal = document.querySelector('#tiempo-total');
+const tiempoTotal = document.querySelector('#tiempo-total');
 
 // Barra de volumen
 const barraVolumen = document.querySelector('#barra-volumen');
@@ -205,7 +205,7 @@ audio.addEventListener('timeupdate', () => {
 
 // Cuando el audio carga su duración total
 audio.addEventListener('loadedmetadata', () => {
-    tiempoTiempoTotal.textContent = formatearTiempo(audio.duration || 0);
+    tiempoTotal.textContent = formatearTiempo(audio.duration || 0);
 });
 
 // Cuando termina una canción, pasa a la siguiente
@@ -251,12 +251,29 @@ function actualizarIconoVolumen() {
 // Volumen inicial al 70%
 audio.volume = 0.7;
 
-// INICIO: PLAYLETS POPULARES
+// INICIO: PLAYLISTS POPULARES
+// Muestra un spinner mientras carga las playlists
+const contenedorPlaylists = document.querySelector('#playlists');
+contenedorPlaylists.innerHTML = `
+    <div class="loading-container">
+        <i class="fa-solid fa-spinner fa-spin"></i>
+        <p>Cargando playlists...</p>
+    </div>
+`;
+
 // Pide las playlists populares y las dibuja en la sección "Para empezar"
 fetch('/api/playlists-populares')
-    // Convierte la respuesta de JSON a objeto
     .then(response => response.json())
     .then(data => {
+        // Limpia el spinner
+        contenedorPlaylists.innerHTML = '';
+
+        // Si no hay playlists, muestra un mensaje
+        if (!data.playlists || data.playlists.length === 0) {
+            contenedorPlaylists.innerHTML = '<p class="sin-resultados">No se encontraron playlists.</p>';
+            return;
+        }
+
         // Recorre cada playlist y crea una tarjeta
         data.playlists.forEach(playlist => {
 
@@ -295,82 +312,212 @@ fetch('/api/playlists-populares')
             tarjeta.appendChild(dueno);
 
             // Agrega la tarjeta al contenedor de playlists
-            document.querySelector('#playlists').appendChild(tarjeta);
+            contenedorPlaylists.appendChild(tarjeta);
         });
     })
-    .catch(error => console.error('Error al cargar playlists:', error));
+    .catch(error => {
+        console.error('Error al cargar playlists:', error);
+        contenedorPlaylists.innerHTML = '<p class="sin-resultados">Error al cargar las playlists.</p>';
+    });
 
+// ========================================
 // EXPLORAR: BUSCADOR DE MÚSICA
+// ========================================
+
 // Toma el input y el button del sidebar
 const inputBuscar = document.querySelector('#input-buscar');
 const btnBuscar = document.querySelector('#btn-buscar');
 
-// Cuando hacen click en Buscar
-btnBuscar.addEventListener('click', () => {
+// Crea el título de una sección (Canciones, Artistas, etc.) y lo devuelve
+function crearTituloSeccion(texto) {
+    const titulo = document.createElement('h3');
+    titulo.classList.add('seccion-titulo');
+    titulo.textContent = texto;
+    return titulo;
+}
 
+// Crea una tarjeta de artista (imagen circular, abre Spotify al click)
+function crearTarjetaArtista(artista) {
+    if (!artista.images || artista.images.length === 0) return null;
+
+    const tarjeta = document.createElement('div');
+    tarjeta.classList.add('tarjeta-cancion', 'tarjeta-artista');
+    tarjeta.style.setProperty('--portada-url', `url(${artista.images[0].url})`);
+
+    // Foto del artista
+    const portada = document.createElement('img');
+    portada.src = artista.images[0].url;
+    tarjeta.appendChild(portada);
+
+    // Nombre del artista
+    const nombre = document.createElement('p');
+    nombre.textContent = artista.name;
+    tarjeta.appendChild(nombre);
+
+    // Tipo de contenido (queda como subtítulo gris)
+    const tipo = document.createElement('p');
+    tipo.textContent = 'Artista';
+    tarjeta.appendChild(tipo);
+
+    // CUANDO CLICKEAN: abre el artista en Spotify
+    tarjeta.addEventListener('click', () => {
+        window.open(artista.external_urls.spotify, '_blank');
+    });
+
+    return tarjeta;
+}
+
+// Crea una tarjeta de álbum (abre Spotify al click)
+function crearTarjetaAlbum(album) {
+    if (!album.images || album.images.length === 0) return null;
+
+    const tarjeta = document.createElement('div');
+    tarjeta.classList.add('tarjeta-cancion');
+    tarjeta.style.setProperty('--portada-url', `url(${album.images[0].url})`);
+
+    // Portada del álbum
+    const portada = document.createElement('img');
+    portada.src = album.images[0].url;
+    tarjeta.appendChild(portada);
+
+    // Nombre del álbum
+    const nombre = document.createElement('p');
+    nombre.textContent = album.name;
+    tarjeta.appendChild(nombre);
+
+    // Artista principal del álbum
+    const artista = document.createElement('p');
+    artista.textContent = album.artists[0].name;
+    tarjeta.appendChild(artista);
+
+    // CUANDO CLICKEAN: abre el álbum en Spotify
+    tarjeta.addEventListener('click', () => {
+        window.open(album.external_urls.spotify, '_blank');
+    });
+
+    return tarjeta;
+}
+
+// Crea una tarjeta de playlist (abre Spotify al click)
+function crearTarjetaPlaylist(playlist) {
+    if (!playlist.images || playlist.images.length === 0) return null;
+
+    const tarjeta = document.createElement('div');
+    tarjeta.classList.add('tarjeta-cancion');
+    tarjeta.style.setProperty('--portada-url', `url(${playlist.images[0].url})`);
+
+    // Portada de la playlist
+    const portada = document.createElement('img');
+    portada.src = playlist.images[0].url;
+    tarjeta.appendChild(portada);
+
+    // Nombre de la playlist
+    const nombre = document.createElement('p');
+    nombre.textContent = playlist.name;
+    tarjeta.appendChild(nombre);
+
+    // Dueño de la playlist
+    const dueno = document.createElement('p');
+    dueno.textContent = playlist.owner.display_name;
+    tarjeta.appendChild(dueno);
+
+    // CUANDO CLICKEAN: abre la playlist en Spotify
+    tarjeta.addEventListener('click', () => {
+        window.open(playlist.external_urls.spotify, '_blank');
+    });
+
+    return tarjeta;
+}
+
+// Agrega a la vista una sección con título y sus tarjetas
+// Si no hay tarjetas para mostrar, no agrega nada (ni el título)
+function agregarSeccion(vista, tituloTexto, items, funcionTarjeta) {
+
+    // Crea las tarjetas válidas (Spotify a veces devuelve items nulos o sin imagen)
+    const tarjetas = items.filter(item => item)
+        .map(item => funcionTarjeta(item))
+        .filter(tarjeta => tarjeta !== null);
+
+    // Si ninguna tarjeta se pudo crear, sale sin agregar nada
+    if (tarjetas.length === 0) return;
+
+    // Agrega el título de la sección
+    vista.appendChild(crearTituloSeccion(tituloTexto));
+
+    // Agrega las tarjetas una por una
+    tarjetas.forEach(tarjeta => vista.appendChild(tarjeta));
+}
+
+// Cuando hacen click en Buscar O presionan Enter
+function ejecutarBusqueda() {
     // Toma el texto que escribió el usuario
     const texto = inputBuscar.value.trim();
 
     // Si no escribió nada, no hace nada
     if (!texto) return;
 
+    // Muestra un spinner mientras busca
+    const vista = document.querySelector('#vista-explorar');
+    vista.innerHTML = `
+        <div class="loading-container">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <p>Buscando "${texto}"...</p>
+        </div>
+    `;
+
+    // Muestra la vista de explorar con el spinner
+    linksSidebar.forEach(l => l.classList.remove('activo'));
+    document.querySelectorAll('.vista').forEach(v => v.classList.remove('activa'));
+    vista.classList.add('activa');
+
     // Pide a nuestra API que busque en Spotify
     fetch(`/api/buscar?q=${encodeURIComponent(texto)}`)
         .then(response => response.json())
         .then(data => {
 
-            // Toma la vista de explorar y la limpia
-            const vista = document.querySelector('#vista-explorar');
+            // Limpia el spinner
             vista.innerHTML = '';
 
             // Título con lo que se buscó
             const titulo = document.createElement('h2');
             titulo.classList.add('vista-titulo');
-            titulo.textContent = `Resultados para: ${texto}`;
+            titulo.textContent = `Resultados para: "${texto}"`;
             vista.appendChild(titulo);
 
-            // Recorre las canciones encontradas y crea una tarjeta para cada una
-            data.tracks.items.forEach(track => {
+            // Agrega cada sección solo si tiene resultados
+            if (data.tracks) agregarSeccion(vista, 'Canciones', data.tracks.items, crearTarjetaCancion);
+            if (data.artists) agregarSeccion(vista, 'Artistas', data.artists.items, crearTarjetaArtista);
+            if (data.albums) agregarSeccion(vista, 'Álbumes', data.albums.items, crearTarjetaAlbum);
+            if (data.playlists) agregarSeccion(vista, 'Playlists', data.playlists.items, crearTarjetaPlaylist);
 
-                const tarjeta = document.createElement('div');
-                tarjeta.classList.add('tarjeta-cancion');
-                tarjeta.style.setProperty('--portada-url', `url(${track.album.images[0].url})`);
-
-                // Portada del álbum
-                const portada = document.createElement('img');
-                portada.src = track.album.images[0].url;
-                tarjeta.appendChild(portada);
-
-                // Botón de play
-                const btnPlay = document.createElement('button');
-                btnPlay.classList.add('btn-play');
-                btnPlay.innerHTML = '<i class="fa-solid fa-play"></i>';
-                tarjeta.appendChild(btnPlay);
-
-                // CUANDO CLICKEAN EL BOTÓN: reproduce el preview de 30s
-                btnPlay.addEventListener('click', () => {
-                    reproducirPreview(track.preview_url, track.name, track.artists[0].name, track.album.images[0].url);
-                });
-
-                // Nombre de la canción
-                const cancion = document.createElement('p');
-                cancion.textContent = track.name;
-                tarjeta.appendChild(cancion);
-
-                // Artista
-                const artista = document.createElement('p');
-                artista.textContent = track.artists[0].name;
-                tarjeta.appendChild(artista);
-
-                vista.appendChild(tarjeta);
-            });
-
-            // Muestra la vista de explorar
-            linksSidebar.forEach(l => l.classList.remove('activo'));
-            document.querySelectorAll('.vista').forEach(v => v.classList.remove('activa'));
-            document.querySelector('#vista-explorar').classList.add('activa');
+            // Si no apareció ninguna tarjeta en toda la vista, muestra un mensaje
+            const hayResultados = vista.querySelectorAll('.tarjeta-cancion').length > 0;
+            if (!hayResultados) {
+                const vacio = document.createElement('p');
+                vacio.classList.add('sin-resultados');
+                vacio.textContent = `No se encontraron resultados para "${texto}".`;
+                vista.appendChild(vacio);
+            }
         })
-        .catch(error => console.error('Error al buscar:', error));
+        .catch(error => {
+            console.error('Error al buscar:', error);
+            vista.innerHTML = `
+                <div class="loading-container">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <p>Error al buscar. Intentá de nuevo.</p>
+                </div>
+            `;
+        });
+}
+
+// Click en el botón Buscar
+btnBuscar.addEventListener('click', ejecutarBusqueda);
+
+// Presionar Enter en el input de búsqueda
+inputBuscar.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        ejecutarBusqueda();
+    }
 });
 
 
@@ -412,13 +559,21 @@ function crearTarjetaCancion(track) {
 function cargarCancionesRecientes() {
     const contenedor = document.querySelector('#canciones-recientes');
 
+    // Muestra spinner mientras carga
+    contenedor.innerHTML = `
+        <div class="loading-container">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <p>Cargando tus canciones recientes...</p>
+        </div>
+    `;
+
     fetch('/api/canciones')
         .then(response => response.json())
         .then(data => {
             contenedor.innerHTML = '';
 
             if (!data.items || data.items.length === 0) {
-                contenedor.innerHTML = '<p>No tenés canciones recientes.</p>';
+                contenedor.innerHTML = '<p class="sin-resultados">No tenés canciones recientes. Escuchá algo en Spotify primero.</p>';
                 return;
             }
 
@@ -432,7 +587,7 @@ function cargarCancionesRecientes() {
         })
         .catch(error => {
             console.error('Error al cargar canciones recientes:', error);
-            contenedor.innerHTML = '<p>Error al cargar tu biblioteca. Probá de nuevo.</p>';
+            contenedor.innerHTML = '<p class="sin-resultados">Error al cargar tu biblioteca. Probá de nuevo.</p>';
         });
 }
 
@@ -446,7 +601,177 @@ document.querySelectorAll('.sidebar a').forEach(link => {
         }
 
         if (textoLink === 'Perfil') {
-            document.querySelector('#perfil-nombre').textContent = nombreUsuario;
+            cargarPerfilSpotify();
+            cargarTopArtistas();
         }
     });
 });
+
+// ========================================
+// PERFIL: datos reales del usuario desde Spotify
+// ========================================
+
+// Evita cargar el perfil múltiples veces
+let perfilCargado = false;
+
+// Pide los datos del perfil a nuestro servidor (que a su vez pide a Spotify)
+// y los dibuja en la vista de perfil
+function cargarPerfilSpotify() {
+    // Si ya se cargó antes, no vuelve a pedir (evita requests innecesarios)
+    if (perfilCargado) return;
+
+    const contenedor = document.querySelector('#perfil-container');
+
+    fetch('/api/perfil')
+        .then(response => response.json())
+        .then(perfil => {
+            // Marca como cargado para no volver a pedir
+            perfilCargado = true;
+
+            // Construye el HTML del perfil con los datos reales
+            contenedor.innerHTML = `
+                <!-- Avatar: foto de Spotify o icono por defecto -->
+                <div class="perfil-avatar">
+                    ${perfil.imagen
+                        ? `<img src="${perfil.imagen}" alt="Foto de perfil">`
+                        : '<i class="fa-solid fa-user"></i>'}
+                </div>
+
+                <!-- Nombre de usuario -->
+                <div class="perfil-info">
+                    <p class="perfil-label">Nombre de usuario</p>
+                    <p class="perfil-nombre">${perfil.nombre}</p>
+                </div>
+
+                <!-- Email -->
+                <div class="perfil-info">
+                    <p class="perfil-label">Email</p>
+                    <p class="perfil-dato">${perfil.email}</p>
+                </div>
+
+                <!-- Tipo de cuenta (Free o Premium) -->
+                <div class="perfil-info">
+                    <p class="perfil-label">Tipo de cuenta</p>
+                    <p class="perfil-dato ${perfil.tipo_cuenta === 'premium' ? 'premium' : ''}">
+                        ${perfil.tipo_cuenta === 'premium' ? 'Premium' : 'Free'}
+                    </p>
+                </div>
+
+                <!-- País -->
+                <div class="perfil-info">
+                    <p class="perfil-label">País</p>
+                    <p class="perfil-dato">${perfil.pais}</p>
+                </div>
+
+                <!-- Seguidores -->
+                <div class="perfil-info">
+                    <p class="perfil-label">Seguidores</p>
+                    <p class="perfil-dato">${perfil.seguidores.toLocaleString()}</p>
+                </div>
+
+                <!-- Conectado con -->
+                <div class="perfil-info">
+                    <p class="perfil-label">Conectado con</p>
+                    <p class="perfil-dato">Spotify</p>
+                </div>
+            `;
+
+            // También actualiza la imagen en el header si el usuario tiene foto
+            if (perfil.imagen) {
+                const headerPerfil = document.querySelector('.header .perfil');
+                // Solo agrega la imagen si no existe ya
+                if (!headerPerfil.querySelector('img')) {
+                    const imgHeader = document.createElement('img');
+                    imgHeader.src = perfil.imagen;
+                    imgHeader.alt = 'Foto';
+                    imgHeader.style.cssText = 'width: 28px; height: 28px; border-radius: 50%; object-fit: cover;';
+                    headerPerfil.insertBefore(imgHeader, headerPerfil.firstChild);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error al cargar perfil:', error);
+            // Si falla, muestra un perfil básico con el nombre que ya tenemos
+            contenedor.innerHTML = `
+                <div class="perfil-avatar">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <div class="perfil-info">
+                    <p class="perfil-label">Nombre de usuario</p>
+                    <p class="perfil-nombre">${nombreUsuario}</p>
+                </div>
+                <div class="perfil-info">
+                    <p class="perfil-label">Conectado con</p>
+                    <p class="perfil-dato">Spotify</p>
+                </div>
+                <p class="sin-resultados">No se pudieron cargar los datos del perfil.</p>
+            `;
+        });
+}
+
+
+// ========================================
+// TOP ARTISTAS: artistas más escuchados
+// ========================================
+
+let topArtistasCargado = false;
+
+// Pide los artistas más escuchados y los dibuja como tarjetas
+function cargarTopArtistas() {
+    if (topArtistasCargado) return;
+
+    const contenedor = document.querySelector('#top-artistas');
+    contenedor.innerHTML = '<div class="perfil-loading"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+
+    fetch('/api/top-artistas')
+        .then(response => response.json())
+        .then(data => {
+            topArtistasCargado = true;
+
+            // Si no hay artistas, muestra un mensaje
+            if (!data.items || data.items.length === 0) {
+                contenedor.innerHTML = '<p class="sin-resultados">Todavía no tenés suficientes datos de escucha.</p>';
+                return;
+            }
+
+            // Limpia el contenedor
+            contenedor.innerHTML = '';
+
+            // Recorre cada artista y crea una tarjeta
+            data.items.forEach(artista => {
+                // Salta artistas sin imagen
+                if (!artista.images || artista.images.length === 0) return;
+
+                const tarjeta = document.createElement('div');
+                tarjeta.classList.add('tarjeta-cancion', 'tarjeta-artista');
+                tarjeta.style.setProperty('--portada-url', `url(${artista.images[0].url})`);
+
+                // Foto del artista (circular)
+                const portada = document.createElement('img');
+                portada.src = artista.images[0].url;
+                portada.alt = artista.name;
+                tarjeta.appendChild(portada);
+
+                // Nombre del artista
+                const nombre = document.createElement('p');
+                nombre.textContent = artista.name;
+                tarjeta.appendChild(nombre);
+
+                // Géneros principales (los dos primeros)
+                const generos = document.createElement('p');
+                generos.textContent = artista.genres.slice(0, 2).join(', ') || 'Artista';
+                tarjeta.appendChild(generos);
+
+                // Click para abrir en Spotify
+                tarjeta.addEventListener('click', () => {
+                    window.open(artista.external_urls.spotify, '_blank');
+                });
+
+                contenedor.appendChild(tarjeta);
+            });
+        })
+        .catch(error => {
+            console.error('Error al cargar top artistas:', error);
+            contenedor.innerHTML = '<p class="sin-resultados">Error al cargar los artistas.</p>';
+        });
+}
