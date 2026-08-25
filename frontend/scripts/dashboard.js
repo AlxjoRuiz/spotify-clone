@@ -364,7 +364,7 @@ function crearTarjetaArtista(artista) {
     return tarjeta;
 }
 
-// Crea una tarjeta de álbum (abre Spotify al click)
+// Crea una tarjeta de álbum que al hacer clickear muestra las canciones
 function crearTarjetaAlbum(album) {
     if (!album.images || album.images.length === 0) return null;
 
@@ -387,12 +387,139 @@ function crearTarjetaAlbum(album) {
     artista.textContent = album.artists[0].name;
     tarjeta.appendChild(artista);
 
-    // CUANDO CLICKEAN: abre el álbum en Spotify
+    // NUEVO: Al clickear, carga las canciones del álbum en vez de abrir Spotify
     tarjeta.addEventListener('click', () => {
-        window.open(album.external_urls.spotify, '_blank');
+        cargarAlbum(album.id);
     });
 
     return tarjeta;
+}
+
+// VISTA DE ÁLBUM: muestra las canciones de un álbum
+// Pide las canciones del álbum al servidor y las dibuja en la vista Explorar
+function cargarAlbum(albumId) {
+
+    // Muestra spinner mientras carga
+    const vista = document.querySelector('#vista-explorar');
+    vista.innerHTML = `
+        <div class="loading-container">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <p>Cargando álbum...</p>
+        </div>
+    `;
+
+    // Muestra la vista de explorar
+    linksSidebar.forEach(l => l.classList.remove('activo'));
+    document.querySelectorAll('.vista').forEach(v => v.classList.remove('activa'));
+    vista.classList.add('activa');
+
+    // Pide las canciones del álbum a nuestro servidor
+    fetch(`/api/album/${albumId}/tracks`)
+        .then(response => response.json())
+        .then(data => {
+            vista.innerHTML = '';
+
+            // --- ENCABEZADO DEL ÁLBUM ---
+            const encabezado = document.createElement('div');
+            encabezado.classList.add('album-encabezado');
+
+            // Portada grande del álbum
+            if (data.album.portada) {
+                const img = document.createElement('img');
+                img.src = data.album.portada;
+                img.classList.add('album-portada');
+                encabezado.appendChild(img);
+            }
+
+            // Info del álbum
+            const info = document.createElement('div');
+            info.classList.add('album-info');
+            info.innerHTML = `
+                <p class="album-label">Álbum</p>
+                <h2 class="album-nombre">${data.album.nombre}</h2>
+                <p class="album-artista">${data.album.artista}</p>
+                <p class="album-meta">${data.album.total_canciones} canciones · ${data.album.fecha}</p>
+            `;
+            encabezado.appendChild(info);
+
+            vista.appendChild(encabezado);
+
+            // --- BOTÓN VOLVER A RESULTADOS ---
+            const btnVolver = document.createElement('button');
+            btnVolver.classList.add('btn-volver-busqueda');
+            btnVolver.innerHTML = '<i class="fa-solid fa-arrow-left"></i> Volver a resultados';
+            btnVolver.addEventListener('click', () => {
+                ejecutarBusqueda();  // Vuelve a mostrar los resultados de la última búsqueda
+            });
+            vista.appendChild(btnVolver);
+
+            // --- LISTA DE CANCIONES ---
+            const lista = document.createElement('div');
+            lista.classList.add('album-lista');
+
+            data.tracks.forEach((track, index) => {
+                const cancion = document.createElement('div');
+                cancion.classList.add('album-cancion');
+
+                // Número de posición
+                const posicion = document.createElement('span');
+                posicion.classList.add('album-cancion-numero');
+                posicion.textContent = index + 1;
+                cancion.appendChild(posicion);
+
+                // Info de la canción (nombre + artista)
+                const infoCancion = document.createElement('div');
+                infoCancion.classList.add('album-cancion-info');
+
+                const nombreCancion = document.createElement('p');
+                nombreCancion.textContent = track.name;
+                infoCancion.appendChild(nombreCancion);
+
+                const artistaCancion = document.createElement('p');
+                artistaCancion.textContent = track.artists.map(a => a.name).join(', ');
+                infoCancion.appendChild(artistaCancion);
+
+                cancion.appendChild(infoCancion);
+
+                // Duración
+                const duracion = document.createElement('span');
+                duracion.classList.add('album-cancion-duracion');
+                const mins = Math.floor(track.duration_ms / 60000);
+                const secs = Math.floor((track.duration_ms % 60000) / 1000);
+                duracion.textContent = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                cancion.appendChild(duracion);
+
+                // Botón de play (si tiene preview)
+                if (track.preview_url) {
+                    const btnPlay = document.createElement('button');
+                    btnPlay.classList.add('album-cancion-play');
+                    btnPlay.innerHTML = '<i class="fa-solid fa-play"></i>';
+                    btnPlay.addEventListener('click', (e) => {
+                        e.stopPropagation();  // Evita que se propague a otros listeners
+                        reproducirPreview(
+                            track.preview_url,
+                            track.name,
+                            track.artists[0].name,
+                            data.album.portada
+                        );
+                    });
+                    cancion.appendChild(btnPlay);
+                }
+
+                lista.appendChild(cancion);
+            });
+
+            vista.appendChild(lista);
+        })
+        .catch(error => {
+            console.error('Error al cargar álbum:', error);
+            vista.innerHTML = `
+                <div class="loading-container">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <p>Error al cargar el álbum. Intentá de nuevo.</p>
+                </div>
+            `;
+        });
 }
 
 // Crea una tarjeta de playlist (abre Spotify al click)
@@ -507,6 +634,17 @@ function ejecutarBusqueda() {
         });
 }
 
+function ejecutarBusqueda() {
+    const texto = inputBuscar.value.trim();
+
+    if (!texto) return;
+
+    // NUEVO: guarda la búsqueda en el historial
+    guardarEnHistorial(texto);
+
+    // ... el resto de la función queda igual (spinner, fetch, dibujar resultados)
+}
+
 // Click en el botón Buscar
 btnBuscar.addEventListener('click', ejecutarBusqueda);
 
@@ -515,7 +653,11 @@ inputBuscar.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
         ejecutarBusqueda();
     }
+
+    // Muestra las sugerencias del historial al cargar la página
+    mostrarSugerencias();
 });
+
 
 
 
@@ -897,3 +1039,63 @@ function cargarTopTracks() {
         });
 }
 
+
+// HISTORIAL DE BÚSQUEDAS
+// Guarda las últimas búsquedas en localStorage (almacenamiento del navegador)
+// No usa servidor ni base de datos, es 100% del lado del cliente
+
+const HISTORIAL_MAX = 5;  // Cuántas búsquedas recordar
+
+// Obtiene el historial guardado (o un array vacío si no hay nada)
+function obtenerHistorial() {
+    const historial = localStorage.getItem('historial_busquedas');
+    return historial ? JSON.parse(historial) : [];
+    // JSON.parse convierte el stringguardado en un array real
+}
+
+// Guarda una búsqueda nueva en el historial
+function guardarEnHistorial(texto) {
+    const historial = obtenerHistorial();
+
+    // Elimina duplicados: si ya buscaste "bad bunny", no lo guarda dos veces
+    const filtrado = historial.filter(item => item.toLowerCase() !== texto.toLowerCase());
+
+    // Agrega la nueva búsqueda al inicio del array
+    filtrado.unshift(texto);
+
+    // Si hay más de 5, recorta las viejas (solo queda las últimas 5)
+    const recortado = filtrado.slice(0, HISTORIAL_MAX);
+
+    // Guarda en localStorage (solo acepta strings, por eso usamos JSON.stringify)
+    localStorage.setItem('historial_busquedas', JSON.stringify(recortado));
+
+    // Actualiza las sugerencias que se muestran debajo del input
+    mostrarSugerencias();
+}
+
+// Muestra las búsquedas recientes como botones debajo del input
+function mostrarSugerencias() {
+    const historial = obtenerHistorial();
+    const contenedor = document.querySelector('#sugerencias-busqueda');
+
+    // Si no hay historial o el contenedor no existe, no hace nada
+    if (!contenedor || historial.length === 0) return;
+
+    // Limpia sugerencias anteriores
+    contenedor.innerHTML = '';
+
+    // Crea un botón por cada búsqueda guardada
+    historial.forEach(texto => {
+        const boton = document.createElement('button');
+        boton.classList.add('sugerencia-busqueda');
+        boton.textContent = texto;
+
+        // Al hacer click: busca esa palabra directamente
+        boton.addEventListener('click', () => {
+            inputBuscar.value = texto;  // Pone el texto en el input
+            ejecutarBusqueda();         // Ejecuta la búsqueda
+        });
+
+        contenedor.appendChild(boton);
+    });
+}

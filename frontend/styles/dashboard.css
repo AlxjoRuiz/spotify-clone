@@ -616,6 +616,33 @@ body {
     color: #1DB954;
 }
 
+/* HISTORIAL DE BÚSQUEDAS */
+/* Contenedor de las sugerencias */
+#sugerencias-busqueda {
+    display: flex;
+    flex-wrap: wrap;        /* Las sugerencias saltan a la siguiente línea si no caben */
+    gap: 6px;
+    margin-bottom: 16px;
+}
+
+/* Cada sugerencia es un botón pequeño estilo "chip" */
+.sugerencia-busqueda {
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: none;
+    background: #282828;       /* Gris oscuro */
+    color: #B3B3B3;            /* Texto gris claro */
+    font-size: 0.7rem;
+    font-family: "Poppins", sans-serif;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.sugerencia-busqueda:hover {
+    background: #1DB954;       /* Verde Spotify al pasar el mouse */
+    color: #000000;
+}
+
 /* RESPONSIVE DESIGN (MÓVIL */
 
 /* Tablets y pantallas medianas */
@@ -778,4 +805,164 @@ body {
     color: #727272 !important;
     font-weight: 400 !important;
     margin-top: 4px !important;
+}
+
+
+   VISTA DE ÁLBUM
+/* Encabezado del álbum: portada + info */
+.album-encabezado {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 24px;
+    align-items: flex-end;
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #282828;
+}
+
+/* Portada grande del álbum */
+.album-portada {
+    width: 200px;
+    height: 200px;
+    border-radius: 8px;
+    object-fit: cover;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* Info del álbum */
+.album-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.album-label {
+    font-size: 0.75rem !important;
+    text-transform: uppercase !important;
+    color: #B3B3B3 !important;
+    margin: 0 !important;
+    font-weight: 400 !important;
+}
+
+.album-nombre {
+    font-size: 2.5rem !important;
+    font-weight: 900 !important;
+    margin: 8px 0 !important;
+    line-height: 1.1;
+}
+
+.album-artista {
+    font-size: 1rem !important;
+    color: #B3B3B3 !important;
+    margin: 0 !important;
+}
+
+.album-meta {
+    font-size: 0.85rem !important;
+    color: #727272 !important;
+    margin: 4px 0 0 !important;
+}
+
+/* Botón volver */
+.btn-volver-busqueda {
+    grid-column: 1 / -1;
+    background: none;
+    border: none;
+    color: #B3B3B3;
+    font-family: "Poppins", sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 8px 0;
+    margin-bottom: 12px;
+    transition: color 0.2s;
+}
+
+.btn-volver-busqueda:hover {
+    color: #FFFFFF;
+}
+
+.btn-volver-busqueda i {
+    margin-right: 6px;
+}
+
+/* Lista de canciones del álbum */
+.album-lista {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+/* Cada canción de la lista */
+.album-cancion {
+    display: grid;
+    grid-template-columns: 40px 1fr auto auto;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+
+.album-cancion:hover {
+    background: #ffffff10;     /* Fondo sutil al pasar el mouse */
+}
+
+/* Número de posición */
+.album-cancion-numero {
+    color: #B3B3B3;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+/* Info de la canción (nombre + artista) */
+.album-cancion-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden;
+}
+
+.album-cancion-info p:first-child {
+    font-weight: 600;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0;
+}
+
+.album-cancion-info p:last-child {
+    font-size: 0.8rem;
+    color: #B3B3B3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0;
+}
+
+/* Duración */
+.album-cancion-duracion {
+    color: #B3B3B3;
+    font-size: 0.85rem;
+}
+
+/* Botón play de cada canción */
+.album-cancion-play {
+    background: none;
+    border: none;
+    color: #B3B3B3;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s, color 0.2s;
+    font-size: 0.85rem;
+    padding: 4px;
+}
+
+.album-cancion:hover .album-cancion-play {
+    opacity: 1;
+}
+
+.album-cancion-play:hover {
+    color: #FFFFFF;
 }
