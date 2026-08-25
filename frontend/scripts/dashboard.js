@@ -320,10 +320,7 @@ fetch('/api/playlists-populares')
         contenedorPlaylists.innerHTML = '<p class="sin-resultados">Error al cargar las playlists.</p>';
     });
 
-// ========================================
 // EXPLORAR: BUSCADOR DE MÚSICA
-// ========================================
-
 // Toma el input y el button del sidebar
 const inputBuscar = document.querySelector('#input-buscar');
 const btnBuscar = document.querySelector('#btn-buscar');
@@ -607,10 +604,8 @@ document.querySelectorAll('.sidebar a').forEach(link => {
     });
 });
 
-// ========================================
-// PERFIL: datos reales del usuario desde Spotify
-// ========================================
 
+// PERFIL: datos reales del usuario desde Spotify
 // Evita cargar el perfil múltiples veces
 let perfilCargado = false;
 
@@ -710,62 +705,79 @@ function cargarPerfilSpotify() {
 }
 
 
-// ========================================
 // TOP ARTISTAS: artistas más escuchados
-// ========================================
-
 let topArtistasCargado = false;
+// Bandera que indica si ya se cargaron los artistas.
+// Evita hacer requests repetidos si el usuario hace clickear "Perfil" varias veces.
 
-// Pide los artistas más escuchados y los dibuja como tarjetas
+
 function cargarTopArtistas() {
+
+    // Si ya se cargaron antes, no vuelve a pedir
     if (topArtistasCargado) return;
 
+    // Referencia al contenedor donde van las tarjetas
     const contenedor = document.querySelector('#top-artistas');
+
+    // Muestra un spinner de carga mientras llegan los datos
     contenedor.innerHTML = '<div class="perfil-loading"><i class="fa-solid fa-spinner fa-spin"></i></div>';
 
+
+    // Pide los artistas al servidor (que a su vez pide a Spotify)
     fetch('/api/top-artistas')
-        .then(response => response.json())
+        .then(response => response.json())  // Convierte la respuesta a objeto JS
         .then(data => {
+
+            // Marca como cargado para no volver a pedir
             topArtistasCargado = true;
 
-            // Si no hay artistas, muestra un mensaje
+            // Si no hay artistas (usuario nuevo), muestra un mensaje
             if (!data.items || data.items.length === 0) {
                 contenedor.innerHTML = '<p class="sin-resultados">Todavía no tenés suficientes datos de escucha.</p>';
                 return;
             }
 
-            // Limpia el contenedor
+            // Limpia el spinner
             contenedor.innerHTML = '';
+
 
             // Recorre cada artista y crea una tarjeta
             data.items.forEach(artista => {
+
                 // Salta artistas sin imagen
                 if (!artista.images || artista.images.length === 0) return;
 
+
+                // Crea la tarjeta con el efecto hover (degradado)
                 const tarjeta = document.createElement('div');
                 tarjeta.classList.add('tarjeta-cancion', 'tarjeta-artista');
                 tarjeta.style.setProperty('--portada-url', `url(${artista.images[0].url})`);
 
-                // Foto del artista (circular)
+
+                // Foto del artista
                 const portada = document.createElement('img');
                 portada.src = artista.images[0].url;
                 portada.alt = artista.name;
                 tarjeta.appendChild(portada);
+
 
                 // Nombre del artista
                 const nombre = document.createElement('p');
                 nombre.textContent = artista.name;
                 tarjeta.appendChild(nombre);
 
-                // Géneros principales (los dos primeros)
+
+                // Géneros musicales (máximo 2)
                 const generos = document.createElement('p');
                 generos.textContent = artista.genres.slice(0, 2).join(', ') || 'Artista';
                 tarjeta.appendChild(generos);
 
-                // Click para abrir en Spotify
+
+                // Click: abre el artista en Spotify
                 tarjeta.addEventListener('click', () => {
                     window.open(artista.external_urls.spotify, '_blank');
                 });
+
 
                 contenedor.appendChild(tarjeta);
             });
@@ -774,4 +786,114 @@ function cargarTopArtistas() {
             console.error('Error al cargar top artistas:', error);
             contenedor.innerHTML = '<p class="sin-resultados">Error al cargar los artistas.</p>';
         });
+
+
+    // También carga las canciones favoritas en paralelo
+    cargarTopTracks();
+    // Ambas funciones se ejecutan al mismo tiempo, más rápido que una tras otra
 }
+
+// TOP TRACKS: canciones más escuchadas
+// Bandera para no cargar los datos dos veces si el usuario hace clickear
+// "Perfil" varias veces seguidas
+let topTracksCargado = false;
+
+// Función que pide las top tracks al servidor y las dibuja en pantalla
+function cargarTopTracks() {
+
+    // Si ya se cargaron antes, no vuelve a pedir (evita requests innecesarios)
+    if (topTracksCargado) return;
+
+    // Referencia al contenedor donde van las tarjetas
+    const contenedor = document.querySelector('#top-tracks');
+
+    // Muestra un spinner mientras carga (feedback visual al usuario)
+    contenedor.innerHTML = '<div class="perfil-loading"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+
+    // Pide los datos a nuestro servidor (que a su vez pide a Spotify)
+    fetch('/api/top-tracks')
+        .then(response => response.json())  // Convierte la respuesta a objeto JavaScript
+        .then(data => {
+            topTracksCargado = true;  // Marca como cargado para no repetir
+
+            // Si no hay tracks (usuario nuevo o sin historial), muestra un mensaje
+            if (!data.items || data.items.length === 0) {
+                contenedor.innerHTML = '<p class="sin-resultados">Todavía no tenés suficientes datos de escucha.</p>';
+                return;
+            }
+
+            contenedor.innerHTML = '';  // Limpia el spinner
+
+            // Recorre cada canción del array y crea una tarjeta visual
+            data.items.forEach((track, index) => {
+
+                // Salta canciones sin imagen (Spotify a veces devuelve null)
+                if (!track.album || !track.album.images || track.album.images.length === 0) return;
+
+                // --- CREAR LA TARJETA ---
+                const tarjeta = document.createElement('div');
+                tarjeta.classList.add('tarjeta-cancion');  // Misma clase CSS que las demás tarjetas
+                tarjeta.style.setProperty('--portada-url', `url(${track.album.images[0].url})`);
+
+                // --- NÚMERO DE POSICIÓN (#1, #2, #3...) ---
+                const posicion = document.createElement('span');
+                posicion.classList.add('top-track-numero');
+                posicion.textContent = `#${index + 1}`;  // index empieza en 0, sumamos 1
+                tarjeta.appendChild(posicion);
+
+                // --- PORTADA ---
+                const portada = document.createElement('img');
+                portada.src = track.album.images[0].url;  // images[0] = la más grande
+                tarjeta.appendChild(portada);
+
+                // --- BOTÓN DE PLAY ---
+                const btnPlay = document.createElement('button');
+                btnPlay.classList.add('btn-play');
+                btnPlay.innerHTML = '<i class="fa-solid fa-play"></i>';
+                tarjeta.appendChild(btnPlay);
+
+                // Al hacer clickear: reproduce el preview de 30 segundos
+                btnPlay.addEventListener('click', () => {
+                    reproducirPreview(
+                        track.preview_url,          // URL del preview (30 seg)
+                        track.name,                 // Nombre de la canción
+                        track.artists[0].name,      // Nombre del artista principal
+                        track.album.images[0].url   // URL de la portada
+                    );
+                    // reproducirPreview() es una función que ya existe en dashboard.js
+                    // Se encarga de agregar la canción a la cola y reproducirla
+                });
+
+                // --- NOMBRE DE LA CANCIÓN ---
+                const nombre = document.createElement('p');
+                nombre.textContent = track.name;
+                tarjeta.appendChild(nombre);
+
+                // --- ARTISTA(S) ---
+                // track.artists es un array porque una canción puede tener varios artistas
+                // .map() transforma cada artista en su nombre
+                // .join(', ') une los nombres con coma (ej: "Bad Bunny, J Balvin")
+                const artista = document.createElement('p');
+                artista.textContent = track.artists.map(a => a.name).join(', ');
+                tarjeta.appendChild(artista);
+
+                // --- DURACIÓN ---
+                // Spotify da la duración en milisegundos, convertimos a minutos:segundos
+                const duracion = document.createElement('p');
+                duracion.classList.add('top-track-duracion');
+                const mins = Math.floor(track.duration_ms / 60000);          // 60000ms = 1 min
+                const secs = Math.floor((track.duration_ms % 60000) / 1000); // % saca los minutos, /1000 convierte a seg
+                duracion.textContent = `${mins}:${secs < 10 ? '0' : ''}${secs}`; // Formato "3:05" no "3:5"
+                tarjeta.appendChild(duracion);
+
+                // Agrega la tarjeta completa al contenedor
+                contenedor.appendChild(tarjeta);
+            });
+        })
+        .catch(error => {
+            // Si falla la petición (token vencido, error de red, etc.)
+            console.error('Error al cargar top tracks:', error);
+            contenedor.innerHTML = '<p class="sin-resultados">Error al cargar las canciones.</p>';
+        });
+}
+

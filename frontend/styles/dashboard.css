@@ -555,9 +555,7 @@ body {
     color: #B3B3B3;
 }
 
-/* ========================================
-   PERFIL DINÁMICO
-   ======================================== */
+/*PERFIL DINÁMICO*/
 
 /* Avatar del perfil: puede ser foto de Spotify o icono */
 .perfil-avatar img {
@@ -589,9 +587,7 @@ body {
     color: #1DB954;
 }
 
-/* ========================================
-   TOP ARTISTAS
-   ======================================== */
+/*TOP ARTISTAS*/
 
 /* Tarjetas de artista con foto circular */
 #top-artistas {
@@ -601,9 +597,7 @@ body {
     gap: 20px;
 }
 
-/* ========================================
-   LOADING / SPINNER GLOBAL
-   ======================================== */
+/* LOADING / SPINNER GLOBAL */
 
 /* Contenedor de carga genérico */
 .loading-container {
@@ -622,9 +616,7 @@ body {
     color: #1DB954;
 }
 
-/* ========================================
-   RESPONSIVE DESIGN (MÓVIL)
-   ======================================== */
+/* RESPONSIVE DESIGN (MÓVIL */
 
 /* Tablets y pantallas medianas */
 @media (max-width: 1024px) {
@@ -764,4 +756,26 @@ body {
     .botones-control {
         gap: 10px;
     }
+}
+
+/* TOP TRACKS */
+
+/* Número de posición (#1, #2, etc.) posicionado sobre la portada */
+.top-track-numero {
+    position: absolute;    /* Se posiciona relative a la tarjeta */
+    top: 20px;             /* Desde arriba */
+    left: 20px;            /* Desde la izquierda */
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: #B3B3B3;        /* Gris claro */
+    z-index: 2;            /* Se queda arriba de la imagen */
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);  /* Sombra para que se lea sobre cualquier portada */
+}
+
+/* Duración de la canción (ej: "3:05") en texto chico y gris */
+.top-track-duracion {
+    font-size: 0.75rem !important;
+    color: #727272 !important;
+    font-weight: 400 !important;
+    margin-top: 4px !important;
 }

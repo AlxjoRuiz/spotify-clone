@@ -286,8 +286,33 @@ app.get('/api/top-artistas', async (req, res) => {
     }
 });
 
-// --- Login con Spotify (Authorization Code Flow) ---
 
+// API: TOP TRACKS (canciones favoritas)
+// Endpoint de Spotify que devuelve las canciones que más escuchás
+// Misma lógica que /api/top-artistas pero con canciones en vez de artistas
+app.get('/api/top-tracks', async (req, res) => {
+
+    try {
+        // "time_range" controla el período de tiempo:
+        const timeRange = req.query.time_range || 'medium_term';
+
+        // Pide a Spotify las top tracks del usuario
+        // limit=10 → trae solo las 10 más escuchadas
+        const data = await pedirASpotify(
+            `https://api.spotify.com/v1/me/top/tracks?time_range=${timeRange}&limit=10`,
+            req  // pasamos req porque pedirASpotify saca el token de la sesión
+        );
+
+        // Devuelve el objeto de Spotify con el array "items" que contiene las tracks
+        res.json(data);
+
+    } catch (error) {
+        console.error(error.response?.data || error.message);
+        res.status(500).json({ error: 'No se pudieron obtener las canciones' });
+    }
+});
+
+//Login con Spotify (Authorization Code Flow)
 app.get('/auth/spotify', (req, res) => {
     const params = new URLSearchParams({
         client_id: SPOTIFY_CLIENT_ID,
