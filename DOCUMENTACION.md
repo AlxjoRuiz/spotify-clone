@@ -1,6 +1,6 @@
 # Documentación del proyecto — Spotify Clone
 
-Clon de Spotify con **login usando la cuenta de Spotify** (Authorization Code Flow), persistencia de usuarios en **Supabase** y dashboard completo con reproductor, búsqueda, perfil dinámico y top artistas/canciones.
+Clon de Spotify con **login usando la cuenta de Spotify** (Authorization Code Flow), persistencia de usuarios en **Supabase** y dashboard completo con reproductor, búsqueda, perfil dinámico, top artistas/canciones, vista de álbum, historial de búsquedas y canciones favoritas.
 
 ---
 
@@ -190,6 +190,14 @@ Este helper lo usan todas las rutas de la API (`/api/canciones`, `/api/perfil`, 
 | `/api/canciones` | GET | Canciones escuchadas recientemente |
 | `/api/playlists-populares` | GET | Playlists populares de distintos géneros |
 | `/api/buscar` | GET | Resultados de búsqueda (`?q=texto`) — tracks, artistas, álbumes, playlists |
+| `/api/album/:id/tracks` | GET | Canciones de un álbum específico (usado por la vista de álbum) |
+| `/api/favoritos` | GET | Todos los favoritos del usuario logueado |
+| `/api/favoritos` | POST | Agrega una canción favorita (body: trackId, nombre, artista, imagen, preview) |
+| `/api/favoritos/:trackId` | DELETE | Borra una canción de favoritos del usuario |
+| `/api/album/:id/tracks` | GET | Canciones de un álbum específico (usado por la vista de álbum) |
+| `/api/favoritos` | GET | Todos los favoritos del usuario logueado |
+| `/api/favoritos` | POST | Agrega una canción favorita (body: trackId, nombre, artista, imagen, preview) |
+| `/api/favoritos/:trackId` | DELETE | Borra una canción de favoritos del usuario |
 
 #### `/api/perfil`
 
@@ -230,6 +238,55 @@ app.get('/api/top-tracks', async (req, res) => {
         `https://api.spotify.com/v1/me/top/tracks?time_range=${timeRange}&limit=10`, req
     );
     res.json(data);
+});
+```
+
+#### `/api/album/:id/tracks`
+
+```js
+app.get('/api/album/:id/tracks', async (req, res) => {
+    // Pide a Spotify las canciones del álbum y los datos del álbum en paralelo
+    const [tracksData, albumData] = await Promise.all([
+        pedirASpotify(`https://api.spotify.com/v1/albums/${req.params.id}/tracks?limit=50&market=CO`, req),
+        pedirASpotify(`https://api.spotify.com/v1/albums/${req.params.id}`, req)
+    ]);
+    // Devuelve datos del álbum (nombre, artista, portada, fecha, total) + canciones
+    res.json({ album: {...}, tracks: tracksData.items });
+});
+```
+
+#### `/api/favoritos` — agregar
+
+```js
+app.post('/api/favoritos', async (req, res) => {
+    // Solo si hay usuario logueado (req.session.spotify_user?.id)
+    // upsert con on_conflict=user_profile_id,track_id (no duplica)
+    await upsertSupabaseTable('favoritos', {
+        user_profile_id: userId,
+        track_id, track_nombre, track_artista, track_imagen, track_preview
+    }, 'user_profile_id,track_id');
+    res.json({ ok: true });
+});
+```
+
+#### `/api/favoritos` — ver
+
+```js
+app.get('/api/favoritos', async (req, res) => {
+    // Lee de Supabase filtrando por user_profile_id
+    const filas = await leerSupabase('favoritos', { user_profile_id: userId });
+    res.json({ favoritos: filas || [] });
+});
+```
+
+#### `/api/favoritos/:trackId` — borrar
+
+```js
+app.delete('/api/favoritos/:trackId', async (req, res) => {
+    // Filtra por user_profile_id Y track_id para borrar solo el del usuario
+    const url = `${...}/rest/v1/favoritos?user_profile_id=eq.${userId}&track_id=eq.${req.params.trackId}`;
+    await axios.delete(url, { headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, ... } });
+    res.json({ ok: true });
 });
 ```
 
@@ -309,6 +366,9 @@ El archivo está dividido en secciones:
 8. **Perfil dinámico** (líneas 594-705) — Trae datos reales de Spotify y los dibuja.
 9. **Top artistas** (líneas 707-769) — Los 10 artistas que más escuchás.
 10. **Top tracks** (líneas 771-874) — Las 10 canciones que más escuchás.
+11. **Vista de álbum** — Al hacer click en una tarjeta de álbum, muestra sus canciones con encabezado y lista.
+12. **Historial de búsquedas** — Guarda las últimas 5 búsquedas en `localStorage` y las muestra como chips clicables.
+13. **Canciones favoritas** — Botón de corazón en cada tarjeta de canción; guarda/borra en Supabase y muestra la lista en Biblioteca.
 
 ### 5.2 Funciones principales del frontend
 
@@ -325,6 +385,9 @@ El archivo está dividido en secciones:
 | `crearTarjetaArtista()` | Crea una tarjeta de artista (foto circular) |
 | `crearTarjetaAlbum()` | Crea una tarjeta de álbum |
 | `crearTarjetaPlaylist()` | Crea una tarjeta de playlist |
+| `cargarAlbum()` | Muestra la vista de un álbum con sus canciones |
+| `guardarFavorito()` | Agrega o quita una canción de favoritos (toggle corazón) |
+| `cargarFavoritos()` | Trae y dibuja los favoritos en la Biblioteca |
 
 ### 5.3 Estados de carga (Loading states)
 
@@ -370,6 +433,21 @@ El CSS tiene 3 breakpoints:
 | `token_spotify` | text | Access token vigente |
 | `refresh_token_spotify` | text | Token para renovar cuando vence |
 
+### Tabla `favoritos`
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `id` | uuid | Clave primaria, se genera sola |
+| `user_profile_id` | uuid | **FK → user_profiles.id**, ON DELETE CASCADE |
+| `track_id` | text | ID de la canción en Spotify |
+| `track_nombre` | text | Nombre de la canción |
+| `track_artista` | text | Nombre del artista |
+| `track_imagen` | text | URL de la portada |
+| `track_preview` | text | URL del preview de 30 segundos |
+| `created_at` | timestamptz | Fecha en que se guardó |
+
+**Clave única `(user_profile_id, track_id)`:** un usuario no puede guardar dos veces la misma canción. RLS activado con políticas permisivas (la seguridad real la da el backend con la `SERVICE_ROLE_KEY`).
+
 ---
 
 ## 7. Flujo de renovación del token
@@ -392,6 +470,34 @@ pedirASpotify() usa el access_token de la sesión
               ▼
       Reintenta la petición una vez
 ```
+
+---
+
+## 7.1 Canciones favoritas — flujo
+
+```
+Click en corazón (tarjeta de canción)
+       │
+       ├── vacío ──► POST /api/favoritos ──► upsert en tabla favoritos (Supabase)
+       │                  ▲                        │
+       │                  └── { ok:true } ◄────────┘
+       │                            │
+       │                            └──► corazón se llena (clase activo)
+       │
+       └── lleno ──► DELETE /api/favoritos/:trackId
+                           └── borra fila en Supabase → corazón se vacía
+
+Entrar a Biblioteca → cargarFavoritos() → GET /api/favoritos → dibuja lista
+```
+
+El botón es un **toggle**: según su estado (clase `activo`) decide si agrega o borra.
+
+## 7.2 Historial de búsquedas
+
+- Se guarda en `localStorage` del navegador (clave `historial_busquedas`).
+- Guarda las últimas **5** búsquedas, sin repetir.
+- Se muestran como "chips" clicables bajo el buscador; al hacer click re-ejecutan esa búsqueda.
+- Es solo del navegador (no del servidor), así que no requiere backend ni Supabase.
 
 ---
 
