@@ -312,6 +312,34 @@ app.get('/api/top-tracks', async (req, res) => {
     }
 });
 
+// API: ÁLBUM: canciones de un álbum específico
+// Se usa cuando el usuario hace clickear un álbum en los resultados de búsqueda
+app.get('/api/album/:id/tracks', async (req, res) => {
+
+    try {
+        // Pide a Spotify las canciones del álbum y los datos del álbum en paralelo
+        const [tracksData, albumData] = await Promise.all([
+            pedirASpotify(`https://api.spotify.com/v1/albums/${req.params.id}/tracks?limit=50&market=CO`, req),
+            pedirASpotify(`https://api.spotify.com/v1/albums/${req.params.id}`, req)
+        ]);
+
+        res.json({
+            album: {
+                nombre: albumData.name,
+                artista: albumData.artists[0].name,
+                portada: albumData.images?.[0]?.url ?? null,
+                fecha: albumData.release_date,
+                total_canciones: albumData.total_tracks
+            },
+            tracks: tracksData.items
+        });
+
+    } catch (error) {
+        console.error(error.response?.data || error.message);
+        res.status(500).json({ error: 'No se pudieron obtener las canciones del álbum' });
+    }
+});
+
 //Login con Spotify (Authorization Code Flow)
 app.get('/auth/spotify', (req, res) => {
     const params = new URLSearchParams({
@@ -322,6 +350,98 @@ app.get('/auth/spotify', (req, res) => {
     });
     res.redirect(`https://accounts.spotify.com/authorize?${params.toString()}`);
 });
+
+// --- CANCIONES FAVORITAS ---
+// Guarda los favoritos de cada usuario en la tabla `favoritos` de Supabase
+// Ruta para AGREGAR una canción a favoritos
+app.post('/api/favoritos', async (req, res) => {
+    try {
+        // Solo funciona si hay un usuario logueado
+        const userId = req.session.spotify_user?.id;
+        if (!userId) return res.status(401).json({ error: 'No logueado' });
+
+        // Datos de la canción que llegan desde el navegador
+        const { trackId, nombre, artista, imagen, preview } = req.body;
+
+        // Guarda en Supabase (si ya existe el mismo track para el usuario, no se duplica)
+        await upsertSupabaseTable('favoritos', {
+            user_profile_id: userId,
+            track_id: trackId,
+            track_nombre: nombre,
+            track_artista: artista,
+            track_imagen: imagen,
+            track_preview: preview
+        }, 'user_profile_id,track_id');
+
+        res.json({ ok: true });
+    } catch (error) {
+        console.error(error.response?.data || error.message);
+        res.status(500).json({ error: 'No se pudo guardar el favorito' });
+    }
+});
+
+// Ruta para VER todos los favoritos del usuario
+app.get('/api/favoritos', async (req, res) => {
+    try {
+        const userId = req.session.spotify_user?.id;
+        if (!userId) return res.status(401).json({ error: 'No logueado' });
+
+        // Lee todos los favoritos de este usuario ordenados por fecha (más reciente primero)
+        const filas = await leerSupabase('favoritos', { user_profile_id: userId });
+        res.json({ favoritos: filas || [] });
+    } catch (error) {
+        console.error(error.response?.data || error.message);
+        res.status(500).json({ error: 'No se pudieron obtener los favoritos' });
+    }
+});
+
+// Ruta para BORRAR una canción de favoritos
+app.delete('/api/favoritos/:trackId', async (req, res) => {
+    try {
+        const userId = req.session.spotify_user?.id;
+        if (!userId) return res.status(401).json({ error: 'No logueado' });
+
+        // Construye la URL de Supabase filtrando por usuario y track
+        const url = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/favoritos?user_profile_id=eq.${userId}&track_id=eq.${req.params.trackId}`;
+        await axios.delete(url, {
+            headers: {
+                apikey: SUPABASE_SERVICE_ROLE_KEY,
+                Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
+            }
+        });
+
+        res.json({ ok: true });
+    } catch (error) {
+        console.error(error.response?.data || error.message);
+        res.status(500).json({ error: 'No se pudo borrar el favorito' });
+    }
+});
+
+// Guarda una canción en favoritos (POST al backend)
+function guardarFavorito(track, boton) {
+    const datos = {
+        trackId: track.id,
+        nombre: track.name,
+        artista: track.artists[0].name,
+        imagen: track.album.images[0].url,
+        preview: track.preview_url || null
+    };
+
+    fetch('/api/favoritos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datos)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.ok) {
+            // Cambia el botón a corazón lleno
+            boton.classList.add('activo');
+            boton.innerHTML = '<i class="fa-solid fa-heart"></i>';
+        }
+    })
+    .catch(err => console.error('Error al guardar favorito:', err));
+}
 
 app.get('/auth/spotify/callback', async (req, res) => {
     const code = req.query.code;

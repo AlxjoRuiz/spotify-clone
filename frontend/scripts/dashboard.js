@@ -737,6 +737,7 @@ document.querySelectorAll('.sidebar a').forEach(link => {
 
         if (textoLink === 'Biblioteca') {
             cargarCancionesRecientes();
+            cargarFavoritos();
         }
 
         if (textoLink === 'Perfil') {
@@ -1098,4 +1099,47 @@ function mostrarSugerencias() {
 
         contenedor.appendChild(boton);
     });
+}
+
+// Agrega o quita una canción de favoritos según su estado actual
+function guardarFavorito(track, boton) {
+    // ¿Ya está marcado? Entonces lo vamos a QUITAR
+    if (boton.classList.contains('activo')) {
+        fetch(`/api/favoritos/${track.id}`, {
+            method: 'DELETE'
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) {
+                // Vuelve a corazón vacío
+                boton.classList.remove('activo');
+                boton.innerHTML = '<i class="fa-regular fa-heart"></i>';
+            }
+        })
+        .catch(err => console.error('Error al quitar favorito:', err));
+        return;
+    }
+
+    // Si no estaba marcado, lo AGREGAMOS
+    const datos = {
+        trackId: track.id,
+        nombre: track.name,
+        artista: track.artists[0].name,
+        imagen: track.album.images[0].url,
+        preview: track.preview_url || null
+    };
+
+    fetch('/api/favoritos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datos)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.ok) {
+            boton.classList.add('activo');
+            boton.innerHTML = '<i class="fa-solid fa-heart"></i>';
+        }
+    })
+    .catch(err => console.error('Error al guardar favorito:', err));
 }
