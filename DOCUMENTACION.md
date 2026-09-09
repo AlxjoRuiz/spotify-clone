@@ -28,11 +28,7 @@ spotify/
 │   │   ├── login.html                 -> Página de login (botón "Log in to Spotify")
 │   │   └── dashboard.html             -> Dashboard protegido (4 vistas)
 │   ├── scripts/
-│   │   ├── dashboard.js               -> Todo el JS del frontend (auth, vistas, reproductor, API)
-│   │   ├── login.js                   -> Vacío (código muerto limpiado)
-│   │   ├── biblioteca.js              -> Vacío (pendiente)
-│   │   ├── buscar.js                  -> Vacío (pendiente)
-│   │   └── perfil.js                  -> Vacío (pendiente)
+│   │   └── dashboard.js               -> TODO el JS del frontend organizado por secciones
 │   └── styles/
 │       ├── login.css                  -> Estilos del login (glassmorphism, video de fondo)
 │       └── dashboard.css              -> Estilos del dashboard (tema Spotify oscuro, responsive)
@@ -354,21 +350,22 @@ app.listen(PORT, () => {
 
 ### 5.1 dashboard.js — Estructura general
 
-El archivo está dividido en secciones:
+El archivo está dividido en 14 secciones numeradas con comentarios `// ---`:
 
-1. **Usuario y sesión** (líneas 1-29) — Lee el nombre de la URL, valida que haya sesión, configura logout.
-2. **Saludo dinámico** (líneas 32-50) — "Buenos días" / "Buenas tardes" / "Buenas noches".
-3. **Sistema de vistas** (líneas 54-86) — Cambia entre Inicio, Explorar, Biblioteca y Perfil.
-4. **Reproductor** (líneas 88-252) — Cola de canciones, play/pausa, anterior/siguiente, volumen, barra de progreso.
-5. **Playlists populares** (líneas 254-321) — Carga y dibuja las playlists del home.
-6. **Búsqueda** (líneas 323-521) — Buscador con Enter y botón, muestra resultados por tipo.
-7. **Canciones recientes** (líneas 525-592) — Biblioteca: lo último que escuchaste.
-8. **Perfil dinámico** (líneas 594-705) — Trae datos reales de Spotify y los dibuja.
-9. **Top artistas** (líneas 707-769) — Los 10 artistas que más escuchás.
-10. **Top tracks** (líneas 771-874) — Las 10 canciones que más escuchás.
-11. **Vista de álbum** — Al hacer click en una tarjeta de álbum, muestra sus canciones con encabezado y lista.
-12. **Historial de búsquedas** — Guarda las últimas 5 búsquedas en `localStorage` y las muestra como chips clicables.
-13. **Canciones favoritas** — Botón de corazón en cada tarjeta de canción; guarda/borra en Supabase y muestra la lista en Biblioteca.
+1. **Utilidades** — `formatearTiempo()`, `escaparHTML()` (previene inyección).
+2. **Sesión** — Lee el nombre de la URL/localStorage, valida la sesión, configura logout.
+3. **Saludo dinámico** — "Buenos días" / "Buenas tardes" / "Buenas noches".
+4. **Navegación entre vistas** — Cambia entre Inicio, Explorar, Biblioteca y Perfil.
+5. **Favoritos (estado global)** — Set de ids + `guardarFavorito()` (toggle), `cargarFavoritos()` y `obtenerFavoritos()`.
+6. **Reproductor** — Cola de canciones, play/pausa, anterior/siguiente, volumen, barra de progreso.
+7. **Creadores de tarjetas** — `crearTarjetaCancion()` (con corazón y play), artista, álbum, playlist.
+8. **Inicio: playlists populares** — Carga y dibuja las playlists del home.
+9. **Búsqueda + historial** — Buscador con Enter y botón; historial (últimas 5) en `localStorage`.
+10. **Vista de álbum** — Canciones de un álbum con encabezado, botón volver y lista.
+11. **Biblioteca: canciones recientes** — Las últimas escuchadas.
+12. **Perfil, top artistas y top tracks** — Datos reales de Spotify + tarjetas con número y duración.
+13. **Navegación (carga perezosa)** — Al entrar a Biblioteca/Perfil se cargan sus datos.
+14. **Inicialización** — Playlists del home + estado de favoritos para los corazones.
 
 ### 5.2 Funciones principales del frontend
 
@@ -376,18 +373,21 @@ El archivo está dividido en secciones:
 |---|---|
 | `reproducirPreview()` | Agrega una canción a la cola y la reproduce (preview de 30 seg) |
 | `reproducirPorIndice()` | Reproduce una canción específica de la cola |
-| `ejecutarBusqueda()` | Pide resultados a `/api/buscar` y los dibuja |
+| `ejecutarBusqueda()` | Guarda en historial, pide resultados a `/api/buscar` y los dibuja |
+| `cargarPlaylists()` | Carga las playlists del home |
 | `cargarCancionesRecientes()` | Pide canciones recientes a `/api/canciones` |
 | `cargarPerfilSpotify()` | Pide el perfil a `/api/perfil` y lo dibuja |
 | `cargarTopArtistas()` | Pide artistas a `/api/top-artistas` y los dibuja |
 | `cargarTopTracks()` | Pide tracks a `/api/top-tracks` y los dibuja |
-| `crearTarjetaCancion()` | Crea una tarjeta de canción reutilizable |
+| `crearTarjetaCancion()` | Crea una tarjeta de canción reutilizable (play + corazón) |
 | `crearTarjetaArtista()` | Crea una tarjeta de artista (foto circular) |
-| `crearTarjetaAlbum()` | Crea una tarjeta de álbum |
+| `crearTarjetaAlbum()` | Crea una tarjeta de álbum (abre la vista de álbum) |
 | `crearTarjetaPlaylist()` | Crea una tarjeta de playlist |
+| `crearBotonFavorito()` | Crea el botón corazón de una tarjeta |
 | `cargarAlbum()` | Muestra la vista de un álbum con sus canciones |
-| `guardarFavorito()` | Agrega o quita una canción de favoritos (toggle corazón) |
+| `guardarFavorito()` | Agrega o quita una canción de favoritos (toggle corazón en Supabase) |
 | `cargarFavoritos()` | Trae y dibuja los favoritos en la Biblioteca |
+| `obtenerFavoritos()` | Sincroniza el estado global de corazones con Supabase |
 
 ### 5.3 Estados de carga (Loading states)
 

@@ -43,6 +43,12 @@ body {
     transition: color 0.2s;
 }
 
+.sidebar nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
 .sidebar a:hover {
     color: #FFFFFF;              /* blanco al pasar el mouse */
 }
@@ -224,6 +230,15 @@ body {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 20px;
     width: 100%;
+}
+
+/* Contenedores internos (playlists, recientes, favoritos, top-artistas, top-tracks):
+   ocupan todo el ancho y a su vez son una grilla de tarjetas */
+.grid-tarjetas {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 20px;
 }
 
 /* Título de cada sección */
@@ -589,12 +604,9 @@ body {
 
 /*TOP ARTISTAS*/
 
-/* Tarjetas de artista con foto circular */
-#top-artistas {
-    grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 20px;
+/* Tarjetas de artista con foto circular (la grilla la da .grid-tarjetas) */
+.tarjeta-artista img {
+    border-radius: 50%;
 }
 
 /* LOADING / SPINNER GLOBAL */
@@ -722,7 +734,8 @@ body {
     }
 
     /* Tarjetas más pequeñas */
-    .vista.activa {
+    .vista.activa,
+    .grid-tarjetas {
         grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
         gap: 12px;
     }
@@ -766,7 +779,8 @@ body {
 
 /* Muy pequeños (celulares) */
 @media (max-width: 480px) {
-    .vista.activa {
+    .vista.activa,
+    .grid-tarjetas {
         grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
         gap: 8px;
     }
@@ -808,7 +822,7 @@ body {
 }
 
 
-   VISTA DE ÁLBUM
+   /* VISTA DE ÁLBUM */
 /* Encabezado del álbum: portada + info */
 .album-encabezado {
     grid-column: 1 / -1;
@@ -970,8 +984,8 @@ body {
 /* Botón de favorito (corazón) */
 .btn-favorito {
     position: absolute;
+    top: 12px;
     right: 12px;
-    bottom: 12px;
     background: rgba(0, 0, 0, 0.7);
     color: #fff;
     border: none;
@@ -984,6 +998,7 @@ body {
     justify-content: center;
     opacity: 0;
     transition: all 0.2s ease;
+    z-index: 2;
 }
 
 .tarjeta-cancion:hover .btn-favorito {

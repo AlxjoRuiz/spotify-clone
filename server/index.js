@@ -1,51 +1,52 @@
+// ------------------------------------------------------------------
+// SERVER Spotify Clone
+// Backend Express que actúa como puente entre el frontend, Spotify y Supabase.
+// ------------------------------------------------------------------
 require('dotenv').config(); // Carga las variables del .env (credenciales, puerto)
 
 const path = require('path');
 const express = require('express');
-const session = require('express-session'); // Guarda el token de Spotify en la sesión del usuario
-const axios = require('axios'); // Hace las peticiones HTTP a Spotify y Supabase
+const session = require('express-session'); // Mantiene al usuario logueado y el token en memoria
+const axios = require('axios');             // Peticiones HTTP a Spotify y a la REST API de Supabase
 
 const app = express();
 
-// --- Login/sesión ---
+// ------------------------------------------------------------------
+// CONFIGURACIÓN GLOBAL
+// ------------------------------------------------------------------
+app.use(express.json()); // Necesario para leer JSON en req.body (POST /api/favoritos)
+app.use(express.static(path.join(__dirname, '..', 'frontend'))); // Sirve HTML/CSS/JS/imágenes
 
-// Protege rutas: solo pasa si hay un access_token de Spotify guardado en sesión
-function verificarLogin(req, res, next) {
-    if (req.session.spotify_access_token) {
-        next();
-    } else {
-        res.redirect('/pages/login.html');
-    }
-};
-
+// Sesiones firmadas y sin cookies para visitantes anónimos
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'un_secreto_cualquiera', // Si falta en .env, usa un fallback
+    secret: process.env.SESSION_SECRET || 'un_secreto_cualquiera', // Cambiar en producción
     resave: false,
-    saveUninitialized: true
+    saveUninitialized: false,
+    cookie: {
+        httpOnly: true,
+        sameSite: 'lax',
+        maxAge: 1000 * 60 * 60 * 24 // 1 día
+    }
 }));
 
-app.get('/pages/dashboard.html', verificarLogin, (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'frontend', 'pages', 'dashboard.html'));
-});
+const PORT = process.env.PORT || 3000;
 
-app.use(express.static(path.join(__dirname, '..', 'frontend')));
-
-const PORT = process.env.PORT;
-
-app.get('/', (req, res) => {
-    res.send('¡Servidor funcionando!');
-});
-
-// --- Credenciales (Spotify + Supabase) ---
-
+// ------------------------------------------------------------------
+// CREDENCIALES (Spotify + Supabase)
+// ------------------------------------------------------------------
 const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 const SPOTIFY_REDIRECT_URI = process.env.SPOTIFY_REDIRECT_URI;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// --- Helpers de Supabase ---
-// Los tres pegan directo a la REST API de Supabase con la SERVICE_ROLE_KEY (acceso admin, salta RLS)
+const SCOPE_SPOTIFY = 'user-read-private user-read-email user-read-recently-played user-top-read';
+const RANGOS_DE_TIEMPO = ['short_term', 'medium_term', 'long_term'];
+
+// ------------------------------------------------------------------
+// HELPERS DE SUPABASE
+// Pegan directo a la REST API de Supabase con la SERVICE_ROLE_KEY (acceso admin, salta RLS)
+// ------------------------------------------------------------------
 
 // Inserta o actualiza una fila. onConflict indica la columna única para decidir si crea o actualiza.
 async function upsertSupabaseTable(table, payload, onConflict) {
@@ -82,6 +83,139 @@ async function leerSupabase(table, filtros) {
     return response.data;
 }
 
+// Borra filas que cumplen los filtros. Devuelve true si la URL era válida.
+async function borrarSupabase(table, filtros) {
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return false;
+
+    const query = new URLSearchParams();
+    for (const [columna, valor] of Object.entries(filtros)) {
+        query.append(columna, `eq.${valor}`);
+    }
+
+    const url = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/${table}?${query.toString()}`;
+    await axios.delete(url, {
+        headers: {
+            apikey: SUPABASE_SERVICE_ROLE_KEY,
+            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
+        }
+    });
+    return true;
+}
+
+// Jerry-rigged: la tabla `favoritos` referencia a `user_profiles.id`.
+// Este helper devuelve ese id (guardado en la sesión durante el login).
+function obtenerUserProfileId(req) {
+    return req.session.spotify_user_profile_id || null;
+}
+
+// ------------------------------------------------------------------
+// AUTH SPOTIFY (Authorization Code Flow)
+// ------------------------------------------------------------------
+
+// Paso 1: redirigir al usuario a la pantalla de autorización de Spotify
+app.get('/auth/spotify', (req, res) => {
+    const params = new URLSearchParams({
+        client_id: SPOTIFY_CLIENT_ID,
+        response_type: 'code',
+        redirect_uri: SPOTIFY_REDIRECT_URI,
+        scope: SCOPE_SPOTIFY
+    });
+    res.redirect(`https://accounts.spotify.com/authorize?${params.toString()}`);
+});
+
+// Paso 2: Spotify devuelve el `code`; lo cambiamos por tokens y guardamos al usuario
+app.get('/auth/spotify/callback', async (req, res) => {
+    const code = req.query.code;
+
+    try {
+        // 1) Cambia el code por access_token (ucase) + refresh_token
+        const tokenResponse = await axios.post('https://accounts.spotify.com/api/token',
+            new URLSearchParams({
+                grant_type: 'authorization_code',
+                code: code,
+                redirect_uri: SPOTIFY_REDIRECT_URI,
+                client_id: SPOTIFY_CLIENT_ID,
+                client_secret: SPOTIFY_CLIENT_SECRET
+            }),
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+        );
+
+        const accessToken = tokenResponse.data.access_token;
+        const refreshToken = tokenResponse.data.refresh_token;
+        req.session.spotify_access_token = accessToken;
+
+        // 2) Pregunta a Spotify quién es el dueño del token
+        const perfilResponse = await axios.get('https://api.spotify.com/v1/me', {
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+        const perfilSpotify = perfilResponse.data;
+
+        // 3) Guarda/actualiza al usuario en la tabla `users` (identificado por spotify_id)
+        const userRows = await upsertSupabaseTable('users', {
+            spotify_id: perfilSpotify.id,
+            display_name: perfilSpotify.display_name ?? null,
+            email: perfilSpotify.email ?? null
+        }, 'spotify_id');
+
+        const user = userRows?.[0] ?? null;
+
+        if (user) {
+            // 4) Guarda/actualiza sus tokens en `user_profiles` (identificado por user_id)
+            //    Devuelve la fila, de la cual tomamos el `id` de user_profiles
+            const profileRows = await upsertSupabaseTable('user_profiles', {
+                user_id: user.id,
+                token_spotify: accessToken,
+                refresh_token_spotify: refreshToken ?? null
+            }, 'user_id');
+
+            const profile = profileRows?.[0] ?? null;
+
+            // Guardamos ambos ids en sesión:
+            //   spotify_user.id           -> id de la tabla `users`
+            //   spotify_user_profile_id   -> id de la tabla `user_profiles` (usado por `favoritos`)
+            req.session.spotify_user = user;
+            if (profile?.id) req.session.spotify_user_profile_id = profile.id;
+        } else {
+            console.warn('No se pudo guardar el usuario en Supabase. Revisá SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY.');
+        }
+
+        res.redirect(`/pages/dashboard.html?nombre=${encodeURIComponent(perfilSpotify.display_name ?? '')}`);
+
+    } catch (error) {
+        console.error('Error en el callback de Spotify:', error.response?.data || error.message);
+        res.redirect('/pages/login.html?error=auth');
+    }
+});
+
+// Cerrar sesión: destruye la sesión y vuelve al login
+app.get('/auth/logout', (req, res) => {
+    req.session.destroy(() => {
+        res.redirect('/pages/login.html');
+    });
+});
+
+// ------------------------------------------------------------------
+// MIDDLEWARE DE PROTECCIÓN
+// ------------------------------------------------------------------
+
+// Solo deja pasar si hay access_token en la sesión; si no, manda al login
+function verificarLogin(req, res, next) {
+    if (req.session.spotify_access_token) {
+        next();
+    } else {
+        res.redirect('/pages/login.html');
+    }
+}
+
+// Página del dashboard protegida (se sirve sola si hay sesión)
+app.get('/pages/dashboard.html', verificarLogin, (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'frontend', 'pages', 'dashboard.html'));
+});
+
+// ------------------------------------------------------------------
+// HELPERS DE SPOTIFY
+// ------------------------------------------------------------------
+
 // Usa el refresh_token guardado en Supabase para pedirle a Spotify un access_token nuevo
 async function renovarAccessTokenSpotify(userId) {
     try {
@@ -115,84 +249,63 @@ async function renovarAccessTokenSpotify(userId) {
     }
 }
 
-
+// Petición GET a Spotify con auto-renovación: si responde 401, renueva el token y reintenta
 async function pedirASpotify(url, req) {
-
-    // Saca el token actual de la sesión (el que se guardó al hacer login)
     let token = req.session.spotify_access_token;
 
     try {
-        // Hace la petición GET a Spotify, usando el token como credencial
         const response = await axios.get(url, {
-            headers: { 'Authorization': `Bearer ${token}` } // Formato estándar de Spotify
+            headers: { 'Authorization': `Bearer ${token}` }
         });
-
-        // Si todo sale bien, devuelve los datos que pidió la ruta
         return response.data;
 
     } catch (error) {
-
-        // ¿El error fue un 401? Eso significa que el token venció
         if (error.response?.status === 401) {
-
-            // Busca el id del usuario en la sesión (lo guardamos al hacer login)
             const userId = req.session.spotify_user?.id;
-
-            // Usa el refresh_token de Supabase para pedir un access_token nuevo
             const tokenNuevo = userId ? await renovarAccessTokenSpotify(userId) : null;
 
-            // Si consiguió token nuevo, lo guarda en la sesión y reintenta la petición
             if (tokenNuevo) {
                 req.session.spotify_access_token = tokenNuevo;
 
-                // Vuelve a pedir lo mismo, pero ahora con el token fresco
                 const reintento = await axios.get(url, {
                     headers: { 'Authorization': `Bearer ${tokenNuevo}` }
                 });
-
-                // Devuelve los datos del segundo intento
                 return reintento.data;
             }
         }
-
-        // Si no fue 401, o no se pudo renovar, avisa el error para arriba
         throw error;
     }
 }
 
-// Ruta que devuelve las canciones escuchadas recientemente por el usuario
+// Normaliza el parámetro time_range (evita valores inválidos)
+function validarTimeRange(valor) {
+    return RANGOS_DE_TIEMPO.includes(valor) ? valor : 'medium_term';
+}
+
+// ------------------------------------------------------------------
+// RUTAS DE LA API (todas protegidas por sesión en el frontend)
+// ------------------------------------------------------------------
+
+// Canciones escuchadas recientemente
 app.get('/api/canciones', async (req, res) => {
-
     try {
-        // Pide a Spotify las canciones recientes usando el helper
-        // (el helper ya se encarga de renovar el token si hace falta)
         const data = await pedirASpotify('https://api.spotify.com/v1/me/player/recently-played', req);
-
-        // Si todo sale bien, le devuelve esos datos al navegador
         res.json(data);
-
     } catch (error) {
-        // Si algo falla, avisa sin romper el servidor
         console.error(error.response?.data || error.message);
         res.status(500).json({ error: 'No se pudieron obtener las canciones' });
     }
 });
 
-// Ruta que devuelve playlists populares de distintos géneros
-// Se arma buscando varias palabras conocidas y juntando los resultados,
-// porque el endpoint de "nuevos lanzamientos" está bloqueado para apps en desarrollo.
+// Playlists populares armadas desde búsquedas por géneros conocidos
 app.get('/api/playlists-populares', async (req, res) => {
-
     try {
-        // Lista de búsquedas que van a llenar la home (cada una trae 3 playlists)
         const busquedas = ['hot hits', 'reggaeton', 'rock', 'pop', 'top 50', 'dance'];
 
-        // Busca todas al mismo tiempo (Promise.all) para no esperarlas una por una
         const resultados = await Promise.all(busquedas.map(busqueda =>
             pedirASpotify(`https://api.spotify.com/v1/search?q=${encodeURIComponent(busqueda)}&type=playlist&limit=3&market=CO`, req)
         ));
 
-        // Junta todas las playlists en un solo array, sin repetir (Set guarda los ids ya vistos)
         const vistos = new Set();
         const playlists = [];
 
@@ -205,53 +318,40 @@ app.get('/api/playlists-populares', async (req, res) => {
                 }
             }
         }
-    
-        // Le manda la lista armada al navegador
+
         res.json({ playlists });
 
     } catch (error) {
-        // Si algo falla, avisa sin romper el servidor
         console.error(error.response?.data || error.message);
         res.status(500).json({ error: 'No se pudieron obtener las playlists' });
     }
 });
 
-// Ruta que busca canciones, artistas, álbumes y playlists según lo que escriba el usuario
+// Búsqueda de canciones, artistas, álbumes y playlists
 app.get('/api/buscar', async (req, res) => {
-
     try {
-        // Toma el texto que llegó desde el frontend (?q=...)
         const q = req.query.q;
+        if (!q) return res.status(400).json({ error: 'Falta el término de búsqueda' });
 
-        // Pide a Spotify resultados de los cuatro tipos a la vez (separados por coma)
-        // El limit se aplica por cada tipo (8 canciones, 8 artistas, etc.)
         const data = await pedirASpotify(`https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=track,artist,album,playlist&limit=8&market=CO`, req);
-
-        // Devuelve todos los resultados agrupados por tipo
         res.json(data);
 
     } catch (error) {
-        // Si algo falla, avisa sin romper el servidor
         console.error(error.response?.data || error.message);
         res.status(500).json({ error: 'No se pudo buscar' });
     }
 });
 
-// Ruta que devuelve el perfil completo del usuario desde Spotify
-// Incluye: nombre, email, imagen, tipo de cuenta, país, seguidores
+// Perfil completo del usuario logueado
 app.get('/api/perfil', async (req, res) => {
-
     try {
-        // Pide a Spotify los datos del usuario logueado usando el helper
-        // (ya maneja la renovación automática del token si vence)
         const perfil = await pedirASpotify('https://api.spotify.com/v1/me', req);
 
-        // Extrae solo los campos que necesitamos y los formatea
         res.json({
             nombre: perfil.display_name ?? 'Sin nombre',
             email: perfil.email ?? 'Sin email',
-            imagen: perfil.images?.[0]?.url ?? null,          // foto de perfil (la más grande)
-            tipo_cuenta: perfil.product ?? 'free',             // "premium" o "free"
+            imagen: perfil.images?.[0]?.url ?? null,
+            tipo_cuenta: perfil.product ?? 'free',
             pais: perfil.country ?? 'Desconocido',
             seguidores: perfil.followers?.total ?? 0,
             id_spotify: perfil.id
@@ -263,21 +363,14 @@ app.get('/api/perfil', async (req, res) => {
     }
 });
 
-// Ruta que devuelve los artistas más escuchados del usuario
-// Se usa el endpoint "top" de Spotify con diferentes rangos de tiempo
+// Artistas más escuchados (?time_range=short_term|medium_term|long_term)
 app.get('/api/top-artistas', async (req, res) => {
-
     try {
-        // "time_range" indica el período: short_term (~4 semanas), medium_term (~6 meses), long_term (todo)
-        // Por defecto usamos medium_term (representa mejor los gustos actuales)
-        const timeRange = req.query.time_range || 'medium_term';
-
+        const timeRange = validarTimeRange(req.query.time_range);
         const data = await pedirASpotify(
             `https://api.spotify.com/v1/me/top/artists?time_range=${timeRange}&limit=10`,
             req
         );
-
-        // Devuelve los artistas con sus datos principales
         res.json(data);
 
     } catch (error) {
@@ -286,24 +379,14 @@ app.get('/api/top-artistas', async (req, res) => {
     }
 });
 
-
-// API: TOP TRACKS (canciones favoritas)
-// Endpoint de Spotify que devuelve las canciones que más escuchás
-// Misma lógica que /api/top-artistas pero con canciones en vez de artistas
+// Canciones más escuchadas (?time_range=short_term|medium_term|long_term)
 app.get('/api/top-tracks', async (req, res) => {
-
     try {
-        // "time_range" controla el período de tiempo:
-        const timeRange = req.query.time_range || 'medium_term';
-
-        // Pide a Spotify las top tracks del usuario
-        // limit=10 → trae solo las 10 más escuchadas
+        const timeRange = validarTimeRange(req.query.time_range);
         const data = await pedirASpotify(
             `https://api.spotify.com/v1/me/top/tracks?time_range=${timeRange}&limit=10`,
-            req  // pasamos req porque pedirASpotify saca el token de la sesión
+            req
         );
-
-        // Devuelve el objeto de Spotify con el array "items" que contiene las tracks
         res.json(data);
 
     } catch (error) {
@@ -312,12 +395,9 @@ app.get('/api/top-tracks', async (req, res) => {
     }
 });
 
-// API: ÁLBUM: canciones de un álbum específico
-// Se usa cuando el usuario hace clickear un álbum en los resultados de búsqueda
+// Canciones de un álbum específico (usado por la vista de álbum)
 app.get('/api/album/:id/tracks', async (req, res) => {
-
     try {
-        // Pide a Spotify las canciones del álbum y los datos del álbum en paralelo
         const [tracksData, albumData] = await Promise.all([
             pedirASpotify(`https://api.spotify.com/v1/albums/${req.params.id}/tracks?limit=50&market=CO`, req),
             pedirASpotify(`https://api.spotify.com/v1/albums/${req.params.id}`, req)
@@ -326,7 +406,7 @@ app.get('/api/album/:id/tracks', async (req, res) => {
         res.json({
             album: {
                 nombre: albumData.name,
-                artista: albumData.artists[0].name,
+                artista: albumData.artists[0]?.name ?? 'Desconocido',
                 portada: albumData.images?.[0]?.url ?? null,
                 fecha: albumData.release_date,
                 total_canciones: albumData.total_tracks
@@ -340,32 +420,24 @@ app.get('/api/album/:id/tracks', async (req, res) => {
     }
 });
 
-//Login con Spotify (Authorization Code Flow)
-app.get('/auth/spotify', (req, res) => {
-    const params = new URLSearchParams({
-        client_id: SPOTIFY_CLIENT_ID,
-        response_type: 'code',
-        redirect_uri: SPOTIFY_REDIRECT_URI,
-        scope: 'user-read-private user-read-email user-read-recently-played user-top-read'
-    });
-    res.redirect(`https://accounts.spotify.com/authorize?${params.toString()}`);
-});
+// ------------------------------------------------------------------
+// CANCIONES FAVORITAS (persistidas en Supabase, tabla `favoritos`)
+// ------------------------------------------------------------------
 
-// --- CANCIONES FAVORITAS ---
-// Guarda los favoritos de cada usuario en la tabla `favoritos` de Supabase
-// Ruta para AGREGAR una canción a favoritos
+// AGREGAR/ACTUALIZAR un favorito
 app.post('/api/favoritos', async (req, res) => {
     try {
-        // Solo funciona si hay un usuario logueado
-        const userId = req.session.spotify_user?.id;
-        if (!userId) return res.status(401).json({ error: 'No logueado' });
+        const userProfileId = obtenerUserProfileId(req);
+        if (!userProfileId) return res.status(401).json({ error: 'No logueado' });
 
-        // Datos de la canción que llegan desde el navegador
-        const { trackId, nombre, artista, imagen, preview } = req.body;
+        const { trackId, nombre, artista, imagen, preview } = req.body || {};
+        if (!trackId || !nombre || !artista) {
+            return res.status(400).json({ error: 'Faltan datos de la canción' });
+        }
 
-        // Guarda en Supabase (si ya existe el mismo track para el usuario, no se duplica)
+        // Si ya existe (mismo perfil + track), se actualiza; si no, se crea
         await upsertSupabaseTable('favoritos', {
-            user_profile_id: userId,
+            user_profile_id: userProfileId,
             track_id: trackId,
             track_nombre: nombre,
             track_artista: artista,
@@ -374,137 +446,56 @@ app.post('/api/favoritos', async (req, res) => {
         }, 'user_profile_id,track_id');
 
         res.json({ ok: true });
+
     } catch (error) {
         console.error(error.response?.data || error.message);
         res.status(500).json({ error: 'No se pudo guardar el favorito' });
     }
 });
 
-// Ruta para VER todos los favoritos del usuario
+// LISTAR todos los favoritos del usuario
 app.get('/api/favoritos', async (req, res) => {
     try {
-        const userId = req.session.spotify_user?.id;
-        if (!userId) return res.status(401).json({ error: 'No logueado' });
+        const userProfileId = obtenerUserProfileId(req);
+        if (!userProfileId) return res.status(401).json({ error: 'No logueado' });
 
-        // Lee todos los favoritos de este usuario ordenados por fecha (más reciente primero)
-        const filas = await leerSupabase('favoritos', { user_profile_id: userId });
+        const filas = await leerSupabase('favoritos', { user_profile_id: userProfileId });
         res.json({ favoritos: filas || [] });
+
     } catch (error) {
         console.error(error.response?.data || error.message);
         res.status(500).json({ error: 'No se pudieron obtener los favoritos' });
     }
 });
 
-// Ruta para BORRAR una canción de favoritos
+// BORRAR un favorito (filtra por perfil Y track para que cada usuario borre solo lo suyo)
 app.delete('/api/favoritos/:trackId', async (req, res) => {
     try {
-        const userId = req.session.spotify_user?.id;
-        if (!userId) return res.status(401).json({ error: 'No logueado' });
+        const userProfileId = obtenerUserProfileId(req);
+        if (!userProfileId) return res.status(401).json({ error: 'No logueado' });
 
-        // Construye la URL de Supabase filtrando por usuario y track
-        const url = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/favoritos?user_profile_id=eq.${userId}&track_id=eq.${req.params.trackId}`;
-        await axios.delete(url, {
-            headers: {
-                apikey: SUPABASE_SERVICE_ROLE_KEY,
-                Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
-            }
+        const borrado = await borrarSupabase('favoritos', {
+            user_profile_id: userProfileId,
+            track_id: req.params.trackId
         });
 
+        if (borrado === false) {
+            return res.status(500).json({ error: 'No se pudo borrar el favorito' });
+        }
+
         res.json({ ok: true });
+
     } catch (error) {
         console.error(error.response?.data || error.message);
         res.status(500).json({ error: 'No se pudo borrar el favorito' });
     }
 });
 
-// Guarda una canción en favoritos (POST al backend)
-function guardarFavorito(track, boton) {
-    const datos = {
-        trackId: track.id,
-        nombre: track.name,
-        artista: track.artists[0].name,
-        imagen: track.album.images[0].url,
-        preview: track.preview_url || null
-    };
-
-    fetch('/api/favoritos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(datos)
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.ok) {
-            // Cambia el botón a corazón lleno
-            boton.classList.add('activo');
-            boton.innerHTML = '<i class="fa-solid fa-heart"></i>';
-        }
-    })
-    .catch(err => console.error('Error al guardar favorito:', err));
-}
-
-app.get('/auth/spotify/callback', async (req, res) => {
-    const code = req.query.code;
-
-    try {
-        // 1) Cambia el code por un access_token + refresh_token
-        const response = await axios.post('https://accounts.spotify.com/api/token',
-            new URLSearchParams({
-                grant_type: 'authorization_code',
-                code: code,
-                redirect_uri: SPOTIFY_REDIRECT_URI,
-                client_id: SPOTIFY_CLIENT_ID,
-                client_secret: SPOTIFY_CLIENT_SECRET
-            }),            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
-        );
-
-        const accessToken = response.data.access_token;
-        const refreshToken = response.data.refresh_token;
-        req.session.spotify_access_token = accessToken;
-
-        // 2) Pregunta a Spotify quién es el usuario dueño de ese token
-        const perfilResponse = await axios.get('https://api.spotify.com/v1/me', {
-            headers: { 'Authorization': `Bearer ${accessToken}` }
-        });
-        const perfilSpotify = perfilResponse.data;
-
-        // 3) Guarda/actualiza al usuario en la tabla `users`, identificado por spotify_id
-        const userRows = await upsertSupabaseTable('users', {
-            spotify_id: perfilSpotify.id,
-            display_name: perfilSpotify.display_name ?? null,
-            email: perfilSpotify.email ?? null
-        }, 'spotify_id');
-
-        const user = userRows?.[0] ?? null;
-
-        if (user) {
-            // 4) Guarda/actualiza sus tokens en `user_profiles`, vinculados por user_id
-            await upsertSupabaseTable('user_profiles', {
-                user_id: user.id,
-                token_spotify: accessToken,
-                refresh_token_spotify: refreshToken ?? null
-            }, 'user_id');
-
-            req.session.spotify_user = user; // Se usa después para renovar el token si vence
-        } else {
-            console.warn('No se pudo guardar el usuario en Supabase. Revisá SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY.');
-        }
-
-        res.redirect(`/pages/dashboard.html?nombre=${encodeURIComponent(perfilSpotify.display_name ?? '')}`);
-
-    } catch (error) {
-        console.error(error.response?.data || error.message);
-        res.send('Error al conectar con Spotify');
-    }
-});
-
-
-// --- Cerrar sesión ---
-
-app.get('/auth/logout', (req, res) => {
-    req.session.destroy(() => {
-        res.redirect('/pages/login.html');
-    });
+// ------------------------------------------------------------------
+// ARRANQUE
+// ------------------------------------------------------------------
+app.get('/', (req, res) => {
+    res.send('¡Servidor funcionando!');
 });
 
 app.listen(PORT, () => {

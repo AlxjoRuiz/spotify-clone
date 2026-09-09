@@ -62,7 +62,7 @@
             <!-- Vista Inicio: playlists populares -->
             <div class="vista activa" id="vista-inicio">
                 <h2 class="vista-titulo">Para empezar</h2>
-                <div id="playlists"></div>
+                <div id="playlists" class="grid-tarjetas"></div>
             </div>
 
             <!-- Vista Explorar: resultados de búsqueda -->
@@ -70,10 +70,13 @@
                 <h2 class="vista-titulo">Buscá tu música favorita</h2>
             </div>
 
-            <!-- Vista Biblioteca: canciones escuchadas recientemente -->
+            <!-- Vista Biblioteca: canciones escuchadas recientemente + favoritos -->
             <div class="vista" id="vista-biblioteca">
                 <h2 class="vista-titulo">Escuchado recientemente</h2>
-                <div id="canciones-recientes"></div>
+                <div id="canciones-recientes" class="grid-tarjetas"></div>
+
+                <h2 class="vista-titulo">Tus canciones favoritas</h2>
+                <div id="favoritos" class="grid-tarjetas"></div>
             </div>
 
             <!-- Vista Perfil: datos reales del usuario desde Spotify -->
@@ -87,14 +90,12 @@
                     </div>
                 </div>
 
-                <!-- Top artistas del usuario -->
+                <!-- Top artistas y top canciones (cada uno en su propio contenedor) -->
                 <h2 class="vista-titulo">Tus artistas favoritos</h2>
-                <div id="top-artistas">
-                <!-- Tus canciones favoritas (se llena con JavaScript) -->
-                <h2 class="vista-titulo">Tus canciones favoritas</h2>
-                <div id="top-tracks"></div>                   
-                    <!-- Se llena dinámicamente con JavaScript -->
-                </div>
+                <div id="top-artistas" class="grid-tarjetas"></div>
+
+                <h2 class="vista-titulo">Tus canciones más escuchadas</h2>
+                <div id="top-tracks" class="grid-tarjetas"></div>
             </div>
 
         </div>

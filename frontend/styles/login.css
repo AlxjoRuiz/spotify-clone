@@ -49,8 +49,17 @@ p {
 #logo {
     width: 80px;
     margin-bottom: 20px;
-    animation: glow 1.5s ease-i
-    n-out infinite;
+    animation: glow 1.5s ease-in-out infinite;
+}
+
+/* animación de brillo del logo */
+@keyframes glow {
+    0%, 100% {
+        filter: drop-shadow(0 0 4px rgba(29, 185, 84, 0.6));
+    }
+    50% {
+        filter: drop-shadow(0 0 18px rgba(29, 185, 84, 1));
+    }
 }
 
 /* configuracion del boton de Spotify */

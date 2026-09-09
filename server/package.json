@@ -1,23 +1,30 @@
 {
-  "name": "spotify",
+  "name": "spotify-clone",
   "version": "1.0.0",
-  "description": "",
+  "description": "Clon de Spotify con login OAuth, dashboard, reproductor y favoritos (Express + Supabase)",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "test": "echo \"No hay tests configurados\" && exit 0"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AlxjoRuiz/spotify-login-clone.git"
+    "url": "git+https://github.com/AlxjoRuiz/spotify-clone.git"
   },
-  "keywords": [],
+  "keywords": [
+    "spotify",
+    "clone",
+    "express",
+    "supabase",
+    "oauth"
+  ],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
-    "url": "https://github.com/AlxjoRuiz/spotify-login-clone/issues"
+    "url": "https://github.com/AlxjoRuiz/spotify-clone/issues"
   },
-  "homepage": "https://github.com/AlxjoRuiz/spotify-login-clone#readme",
+  "homepage": "https://github.com/AlxjoRuiz/spotify-clone#readme",
   "dependencies": {
     "axios": "^1.18.1",
     "dotenv": "^17.4.2",
