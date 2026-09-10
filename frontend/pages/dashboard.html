@@ -19,12 +19,16 @@
 
         <!-- ======== SIDEBAR ======== -->
         <div class="sidebar">
-            <h2>Spotify Dashboard</h2>
+            <h2 class="sidebar-logo">
+                <i class="fa-brands fa-spotify"></i> Spotify
+            </h2>
 
             <!-- Buscador de música -->
             <div class="buscador">
                 <input type="text" id="input-buscar" placeholder="Buscar canciones...">
-                <button id="btn-buscar">Buscar</button>
+                <button id="btn-buscar" title="Buscar">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
             </div>
 
             <!-- Sugerencias de búsquedas recientes (NUEVO) -->
@@ -32,18 +36,28 @@
 
             <!-- Navegación principal -->
             <nav>
-                <ul>                  
-                    <li><a href="#" class="activo">Inicio</a></li>
-                    <li><a href="#">Explorar</a></li>
-                    <li><a href="#">Biblioteca</a></li>
-                    <li><a href="#">Perfil</a></li>
+                <ul>
+                    <li><a href="#" class="activo"><i class="fa-solid fa-house"></i><span>Inicio</span></a></li>
+                    <li><a href="#"><i class="fa-solid fa-compass"></i><span>Explorar</span></a></li>
+                    <li><a href="#"><i class="fa-solid fa-book-open"></i><span>Biblioteca</span></a></li>
+                    <li><a href="#"><i class="fa-solid fa-user"></i><span>Perfil</span></a></li>
                 </ul>
             </nav>
         </div>
 
         <!-- ======== HEADER (barra superior) ======== -->
         <div class="header">
-            <!-- Saludo dinámico según la hora (mañana/tarde/noche) -->
+            <!-- Flechas atrás / adelante (navegación entre vistas) -->
+            <div class="header-navegacion">
+                <button id="btn-atras" class="btn-flecha" title="Volver" disabled>
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <button id="btn-adelante" class="btn-flecha" title="Adelante" disabled>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+
+            <!-- Saludo dinámico según la hora -->
             <span class="greeting" id="greeting">¡Hola!</span>
 
             <!-- Perfil del usuario logueado + botón logout -->
@@ -59,8 +73,9 @@
         <!--CONTENIDO PRINCIPAL (vistas)-->
         <div class="main-content">
 
-            <!-- Vista Inicio: playlists populares -->
+            <!-- Vista Inicio: acceso rápido + playlists populares -->
             <div class="vista activa" id="vista-inicio">
+                <div class="hero-home" id="hero-home"></div>
                 <h2 class="vista-titulo">Para empezar</h2>
                 <div id="playlists" class="grid-tarjetas"></div>
             </div>
