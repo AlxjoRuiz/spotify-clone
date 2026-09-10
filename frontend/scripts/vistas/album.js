@@ -5,7 +5,7 @@
 // ============================================================
 
 import API from '../api.js';
-import { formatearTiempo, escaparHTML } from '../utils.js';
+import { formatearTiempo, escaparHTML, PORTADA_DEFECTO } from '../utils.js';
 import { reproducirPreview } from '../reproductor.js';
 import { mostrarVista } from '../navegacion.js';
 
@@ -28,13 +28,11 @@ export function cargarAlbum(albumId) {
             const encabezado = document.createElement('div');
             encabezado.classList.add('album-encabezado');
 
-            if (data.album.portada) {
-                const img = document.createElement('img');
-                img.src = data.album.portada;
-                img.classList.add('album-portada');
-                img.alt = data.album.nombre;
-                encabezado.appendChild(img);
-            }
+            const img = document.createElement('img');
+            img.src = data.album.portada || PORTADA_DEFECTO;
+            img.classList.add('album-portada');
+            img.alt = data.album.nombre;
+            encabezado.appendChild(img);
 
             const info = document.createElement('div');
             info.classList.add('album-info');

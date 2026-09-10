@@ -19,6 +19,24 @@ export async function obtenerFavoritos() {
     }
 }
 
+// Si el usuario desmarca un favorito desde la Biblioteca,
+// la tarjeta deja de tener sentido: la eliminamos de inmediato.
+function quitarTarjetaDeBiblioteca(boton) {
+    const tarjeta = boton.closest('.tarjeta-cancion');
+    const contenedor = tarjeta?.closest('#favoritos');
+    if (!tarjeta || !contenedor) return;
+
+    tarjeta.remove();
+
+    // Si era la última favorita, mostramos el mensaje de vacío
+    if (contenedor.querySelectorAll('.tarjeta-cancion').length === 0) {
+        const vacio = document.createElement('p');
+        vacio.classList.add('sin-resultados');
+        vacio.textContent = 'Aún no guardaste canciones favoritas.';
+        contenedor.appendChild(vacio);
+    }
+}
+
 // Agrega o quita un favorito según si ya está marcado (toggle)
 export async function guardarFavorito(track, boton) {
     const yaEsFavorito = esFavorito(track.id);
@@ -26,7 +44,10 @@ export async function guardarFavorito(track, boton) {
     try {
         if (yaEsFavorito) {
             const data = await API.quitarFavorito(track.id);
-            if (data.ok) actualizarFavoritoLocal(track.id, false);
+            if (data.ok) {
+                actualizarFavoritoLocal(track.id, false);
+                quitarTarjetaDeBiblioteca(boton);
+            }
         } else {
             const datos = {
                 trackId: track.id,

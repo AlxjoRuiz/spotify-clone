@@ -5,7 +5,7 @@
 // Exporta reproducirPreview(), usado por cualquier card/lista.
 // ============================================================
 
-import { formatearTiempo } from './utils.js';
+import { formatearTiempo, PORTADA_DEFECTO } from './utils.js';
 
 const audio = document.querySelector('#audio-control');
 const reproPortada = document.querySelector('#reproductor-portada');
@@ -36,7 +36,7 @@ let repetirUna = false;              // Repetir la MISMA canción al terminar
 function actualizarInfoReproductor(nombre, artista, portada) {
     reproNombre.textContent = nombre;
     reproArtista.textContent = artista;
-    reproPortada.src = portada;
+    reproPortada.src = portada || PORTADA_DEFECTO;
 }
 
 // Cambia el icono del botón play/pausa

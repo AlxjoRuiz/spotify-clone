@@ -4,7 +4,7 @@
 // de maquetado como agregarSeccion().
 // ============================================================
 
-import { formatearTiempo } from './utils.js';
+import { formatearTiempo, PORTADA_DEFECTO } from './utils.js';
 import { reproducirPreview } from './reproductor.js';
 import { guardarFavorito } from './favoritos.js';
 import { esFavorito } from './estado.js';
@@ -37,8 +37,7 @@ export function crearBotonFavorito(track) {
 
 // Tarjeta de canción reutilizable (portada + play + corazón + nombre/artista)
 export function crearTarjetaCancion(track) {
-    const portadaUrl = track.album?.images?.[0]?.url;
-    if (!portadaUrl) return null;
+    const portadaUrl = track.album?.images?.[0]?.url || PORTADA_DEFECTO;
 
     const tarjeta = document.createElement('div');
     tarjeta.classList.add('tarjeta-cancion');
@@ -82,14 +81,14 @@ export function crearTarjetaCancion(track) {
 
 // Tarjeta de artista (imagen circular, abre Spotify al click)
 export function crearTarjetaArtista(artista) {
-    if (!artista.images || artista.images.length === 0) return null;
+    const portadaUrl = artista.images?.[0]?.url || PORTADA_DEFECTO;
 
     const tarjeta = document.createElement('div');
     tarjeta.classList.add('tarjeta-cancion', 'tarjeta-artista');
-    tarjeta.style.setProperty('--portada-url', `url(${artista.images[0].url})`);
+    tarjeta.style.setProperty('--portada-url', `url(${portadaUrl})`);
 
     const portada = document.createElement('img');
-    portada.src = artista.images[0].url;
+    portada.src = portadaUrl;
     tarjeta.appendChild(portada);
 
     const nombre = document.createElement('p');
@@ -113,14 +112,14 @@ export function crearTarjetaArtista(artista) {
 // El callback alAbrirAlbum(id) lo inyecta la vista de búsqueda para
 // evitar dependencias circulares entre módulos.
 export function crearTarjetaAlbum(album, alAbrirAlbum) {
-    if (!album.images || album.images.length === 0) return null;
+    const portadaUrl = album.images?.[0]?.url || PORTADA_DEFECTO;
 
     const tarjeta = document.createElement('div');
     tarjeta.classList.add('tarjeta-cancion');
-    tarjeta.style.setProperty('--portada-url', `url(${album.images[0].url})`);
+    tarjeta.style.setProperty('--portada-url', `url(${portadaUrl})`);
 
     const portada = document.createElement('img');
-    portada.src = album.images[0].url;
+    portada.src = portadaUrl;
     tarjeta.appendChild(portada);
 
     const nombre = document.createElement('p');
@@ -142,14 +141,14 @@ export function crearTarjetaAlbum(album, alAbrirAlbum) {
 
 // Tarjeta de playlist (abre Spotify al click)
 export function crearTarjetaPlaylist(playlist) {
-    if (!playlist.images || playlist.images.length === 0) return null;
+    const portadaUrl = playlist.images?.[0]?.url || PORTADA_DEFECTO;
 
     const tarjeta = document.createElement('div');
     tarjeta.classList.add('tarjeta-cancion');
-    tarjeta.style.setProperty('--portada-url', `url(${playlist.images[0].url})`);
+    tarjeta.style.setProperty('--portada-url', `url(${portadaUrl})`);
 
     const portada = document.createElement('img');
-    portada.src = playlist.images[0].url;
+    portada.src = portadaUrl;
     tarjeta.appendChild(portada);
 
     const nombre = document.createElement('p');

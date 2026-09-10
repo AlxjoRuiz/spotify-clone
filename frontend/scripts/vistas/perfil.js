@@ -4,7 +4,7 @@
 // ============================================================
 
 import API from '../api.js';
-import { escaparHTML } from '../utils.js';
+import { escaparHTML, PORTADA_DEFECTO } from '../utils.js';
 import { crearTarjetaTopTrack } from '../componentes.js';
 import { nombreUsuario } from '../sesion.js';
 
@@ -107,14 +107,14 @@ function cargarTopArtistas() {
             contenedor.innerHTML = '';
 
             data.items.forEach(artista => {
-                if (!artista.images || artista.images.length === 0) return;
+                const portadaUrl = artista.images?.[0]?.url || PORTADA_DEFECTO;
 
                 const tarjeta = document.createElement('div');
                 tarjeta.classList.add('tarjeta-cancion', 'tarjeta-artista');
-                tarjeta.style.setProperty('--portada-url', `url(${artista.images[0].url})`);
+                tarjeta.style.setProperty('--portada-url', `url(${portadaUrl})`);
 
                 const portada = document.createElement('img');
-                portada.src = artista.images[0].url;
+                portada.src = portadaUrl;
                 portada.alt = artista.name;
                 tarjeta.appendChild(portada);
 
