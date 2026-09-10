@@ -59,7 +59,8 @@ export function crearTarjetaCancion(track) {
             track.preview_url,
             track.name,
             track.artists?.[0]?.name ?? 'Desconocido',
-            portadaUrl
+            portadaUrl,
+            track.id
         );
     });
     tarjeta.appendChild(btnReproducir);
@@ -248,7 +249,8 @@ export function crearListaTracks(tracks, portada) {
                     track.preview_url,
                     track.name,
                     track.artists?.[0]?.name ?? 'Desconocido',
-                    portada
+                    portada,
+                    track.id
                 );
             });
             cancion.appendChild(btnPlayCancion);

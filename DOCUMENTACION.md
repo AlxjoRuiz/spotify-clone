@@ -368,18 +368,18 @@ app.listen(PORT, () => {
 
 El frontend usa **ES Modules** (`<script type="module" src="../scripts/main.js">`). Cada responsabilidad vive en su propio archivo y se importa/exporta explícitamente, eliminando el monolito de `dashboard.js`:
 
-- **`main.js`** — Punto de entrada: pinta el saludo dinámico, carga playlists del home y el estado de favoritos.
+- **`main.js`** — Punto de entrada: pinta el saludo dinámico, carga playlists del home, el estado de favoritos y la **foto de perfil en el header** (reemplaza el icono genérico `fa-user` por la imagen del usuario si tiene).
 - **`utils.js`** — Helpers puros: `formatearTiempo()`, `escaparHTML()` (anti-XSS), `saludoSegunHora()`.
 - **`sesion.js`** — Lee el nombre de la URL/localStorage, redirige a `login.html` si no hay sesión y configura el logout.
-- **`estado.js`** — Estado global de favoritos (`favoritosIds`), consultable con `esFavorito()` y modificable solo vía `setFavoritosIds()` / `actualizarFavoritoLocal()`.
+- **`estado.js`** — Estado global de favoritos (`favoritosIds`), consultable con `esFavorito()` y modificable solo vía `setFavoritosIds()` / `actualizarFavoritoLocal()`. `actualizarCorazones()` refresca los corazones de las tarjetas **y el corazón "me gusta" del reproductor**.
 - **`api.js`** — Un solo objeto `API` con todos los fetch del backend (playlists, búsqueda, album, perfil, top, favoritos).
 - **`favoritos.js`** — `obtenerFavoritos()` y `guardarFavorito()` (toggle) que sincronizan `estado.js` con Supabase.
-- **`reproductor.js`** — Cola de canciones, play/pausa, anterior/siguiente, **shuffle (aleatorio)**, **repeat (repetir lista/canción)**, volumen y barra de progreso. Exporta `reproducirPreview()`.
+- **`reproductor.js`** — Cola de canciones, play/pausa, anterior/siguiente, **shuffle (aleatorio)**, **repeat (repetir lista/canción)**, volumen, barra de progreso y **corazón "me gusta"** (marca como favorita la canción que suena). Exporta `reproducirPreview()`.
 - **`componentes.js`** — Creadores de tarjetas (`crearTarjetaCancion`, artista, álbum, playlist, top track), `agregarSeccion()` y `crearListaTracks()` (lista de canciones compartida por álbumes y playlists). Las tarjetas de álbum y playlist reciben un callback para abrir el detalle sin crear dependencias circulares.
-- **`navegacion.js`** — `mostrarVista()`, los clics del sidebar y un **router por eventos** (`mostrar-vista`) que cualquier módulo puede disparar para navegar sin importar navegación. Biblioteca/Perfil usan **carga perezosa**.
+- **`navegacion.js`** — `mostrarVista()`, los clics del sidebar, **historial de vistas** (flechas atrás/adelante del header) y un **router por eventos** (`mostrar-vista`) que cualquier módulo puede disparar para navegar sin importar navegación. Biblioteca/Perfil usan **carga perezosa**.
 - **`vistas/`** — Una vista por archivo: `inicio.js`, `busqueda.js`, `explorar.js`, `album.js`, `playlist.js`, `biblioteca.js` y `perfil.js`.
 
-> **Comunicación entre módulos sin ciclos:** las vistas que necesitan navegar (explorar, playlist) disparan el evento `mostrar-vista` en `window`, que `navegacion.js` interpreta. La vista de álbum emite `volver-a-resultados` para volver a la búsqueda. Así ningún módulo de vista importa a otro de forma circular.
+> **Comunicación entre módulos sin ciclos:** las vistas que necesitan navegar (explorar, playlist) disparan el evento `mostrar-vista` en `window`, que `navegacion.js` interpreta. La vista de álbum emite `volver-a-resultados` para volver a la búsqueda; si el álbum se abrió desde Explorar (sin búsqueda previa), `busqueda.js` emite `volver-a-explorar` para que Explorar recargue su contenido inicial. Así ningún módulo de vista importa a otro de forma circular.
 
 ### 5.2 Funciones principales del frontend
 
@@ -394,8 +394,8 @@ El frontend usa **ES Modules** (`<script type="module" src="../scripts/main.js">
 | `cargarMisPlaylists()` | `vistas/biblioteca.js` | Pide las playlists del usuario a `/api/mis-playlists` y las dibuja |
 | `cargarPlaylistDetalle()` | `vistas/playlist.js` | Muestra una playlist del usuario con sus canciones |
 | `cargarPerfilSpotify()` | `vistas/perfil.js` | Pide el perfil a `/api/perfil` y lo dibuja |
-| `cargarTopArtistas()` | `vistas/perfil.js` | Pide artistas a `/api/top-artistas` y los dibuja |
-| `cargarTopTracks()` | `vistas/perfil.js` | Pide tracks a `/api/top-tracks` y los dibuja |
+| `cargarTopArtistas()` | `vistas/perfil.js` | Pide artistas a `/api/top-artistas` y los dibuja (respeta el rango elegido en los tabs) |
+| `cargarTopTracks()` | `vistas/perfil.js` | Pide tracks a `/api/top-tracks` y los dibuja (respeta el rango de los tabs) |
 | `crearTarjetaCancion()` | `componentes.js` | Crea una tarjeta de canción reutilizable (play + corazón) |
 | `crearTarjetaArtista()` | `componentes.js` | Crea una tarjeta de artista (foto circular) |
 | `crearTarjetaAlbum()` | `componentes.js` | Crea una tarjeta de álbum (abre la vista de álbum vía callback) |

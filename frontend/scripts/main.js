@@ -6,6 +6,7 @@
 
 import { nombreUsuario } from './sesion.js';
 import { saludoSegunHora } from './utils.js';
+import API from './api.js';
 import { obtenerFavoritos } from './favoritos.js';
 import { cargarPlaylists } from './vistas/inicio.js';
 // Carga los listeners de la barra lateral y del buscador
@@ -20,6 +21,23 @@ document.querySelector('#greeting').textContent = `${saludoSegunHora()}, ${nombr
 // Carga inicial: playlists del home y estado de favoritos (para los corazones)
 cargarPlaylists();
 obtenerFavoritos();
+
+// Foto de perfil en el header (reemplaza el icono genérico si hay imagen)
+API.perfil()
+    .then(perfil => {
+        if (!perfil.imagen) return;
+
+        const contenedor = document.querySelector('.header .perfil');
+        const icono = contenedor?.querySelector('#perfil-icono-header');
+        if (!contenedor || !icono) return;
+
+        const img = document.createElement('img');
+        img.classList.add('header-avatar');
+        img.src = perfil.imagen;
+        img.alt = 'Foto de perfil';
+        icono.replaceWith(img);
+    })
+    .catch(() => {});
 
 // Comienza en la vista Inicio
 mostrarVista('Inicio');

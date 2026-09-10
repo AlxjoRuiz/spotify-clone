@@ -118,11 +118,16 @@ function ejecutarBusqueda() {
         });
 }
 
-// Vuelve a los resultados de la búsqueda que abrió el álbum
+// Vuelve a los resultados de la búsqueda que abrió el álbum.
+// Si el álbum se abrió desde Explorar (sin búsqueda previa),
+// pide a la vista Explorar que recargue su contenido inicial.
 function volverAResultados() {
-    if (ultimaBusqueda) {
-        inputBuscar.value = ultimaBusqueda;
+    if (!ultimaBusqueda) {
+        window.dispatchEvent(new CustomEvent('volver-a-explorar'));
+        return;
     }
+
+    inputBuscar.value = ultimaBusqueda;
     ejecutarBusqueda();
 }
 

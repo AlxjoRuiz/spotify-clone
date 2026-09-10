@@ -12,7 +12,7 @@ export function esFavorito(id) {
     return favoritosIds.has(id);
 }
 
-// Actualiza el corazón de todas las tarjetas visibles
+// Actualiza el corazón de todas las tarjetas visibles y del reproductor
 export function actualizarCorazones() {
     document.querySelectorAll('.btn-favorito').forEach(boton => {
         const activo = favoritosIds.has(boton.dataset.trackId);
@@ -21,6 +21,16 @@ export function actualizarCorazones() {
             ? '<i class="fa-solid fa-heart"></i>'
             : '<i class="fa-regular fa-heart"></i>';
     });
+
+    // Corazón "me gusta" del reproductor (sigue a la canción actual)
+    const btnLike = document.querySelector('#btn-like-reproductor');
+    if (btnLike && btnLike.dataset.trackId) {
+        const activo = favoritosIds.has(btnLike.dataset.trackId);
+        btnLike.classList.toggle('activo', activo);
+        btnLike.innerHTML = activo
+            ? '<i class="fa-solid fa-heart"></i>'
+            : '<i class="fa-regular fa-heart"></i>';
+    }
 }
 
 // Reemplaza el conjunto completo de favoritos (tras obtenerlos de la API)

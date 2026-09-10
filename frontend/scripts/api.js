@@ -18,8 +18,8 @@ export const API = {
     buscar: (texto) => pedir(`/api/buscar?q=${encodeURIComponent(texto)}`),
     albumTracks: (idAlbum) => pedir(`/api/album/${idAlbum}/tracks`),
     perfil: () => pedir('/api/perfil'),
-    topArtistas: () => pedir('/api/top-artistas'),
-    topTracks: () => pedir('/api/top-tracks'),
+    topArtistas: (timeRange = 'medium_term') => pedir(`/api/top-artistas?time_range=${timeRange}`),
+    topTracks: (timeRange = 'medium_term') => pedir(`/api/top-tracks?time_range=${timeRange}`),
     cancionesRecientes: () => pedir('/api/canciones'),
 
     // Favoritos

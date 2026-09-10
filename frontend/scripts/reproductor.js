@@ -6,11 +6,14 @@
 // ============================================================
 
 import { formatearTiempo, PORTADA_DEFECTO } from './utils.js';
+import { esFavorito } from './estado.js';
+import { guardarFavorito } from './favoritos.js';
 
 const audio = document.querySelector('#audio-control');
 const reproPortada = document.querySelector('#reproductor-portada');
 const reproNombre = document.querySelector('#reproductor-nombre');
 const reproArtista = document.querySelector('#reproductor-artista');
+const btnLike = document.querySelector('#btn-like-reproductor');
 
 const btnPlay = document.querySelector('#btn-play');
 const btnAnterior = document.querySelector('#btn-anterior');
@@ -71,11 +74,20 @@ function reproducirPorIndice(indice) {
     audio.src = cancion.previewUrl;
     audio.play();
     actualizarInfoReproductor(cancion.nombre, cancion.artista, cancion.portada);
+
+    // Actualiza el corazón "me gusta" según la canción que suena
+    btnLike.dataset.trackId = cancion.trackId || '';
+    const esFav = cancion.trackId ? esFavorito(cancion.trackId) : false;
+    btnLike.classList.toggle('activo', esFav);
+    btnLike.innerHTML = esFav
+        ? '<i class="fa-solid fa-heart"></i>'
+        : '<i class="fa-regular fa-heart"></i>';
+
     actualizarIconoPlay(true);
 }
 
 // Agrega una canción a la cola y la reproduce
-export function reproducirPreview(previewUrl, nombre, artista, portada) {
+export function reproducirPreview(previewUrl, nombre, artista, portada, trackId) {
     if (!previewUrl) {
         alert('Esta canción no tiene preview disponible');
         return;
@@ -87,7 +99,7 @@ export function reproducirPreview(previewUrl, nombre, artista, portada) {
         return;
     }
 
-    colaCanciones.push({ previewUrl, nombre, artista, portada });
+    colaCanciones.push({ previewUrl, nombre, artista, portada, trackId });
     reproducirPorIndice(colaCanciones.length - 1);
 }
 
@@ -162,6 +174,20 @@ btnAnterior.addEventListener('click', () => {
 
 btnSiguiente.addEventListener('click', () => {
     reproducirSiguiente();
+});
+
+// Corazón "me gusta" del reproductor: marca como favorita la canción actual
+btnLike.addEventListener('click', () => {
+    const cancion = colaCanciones[indiceActual];
+    if (!cancion || !cancion.trackId) return;
+
+    guardarFavorito({
+        id: cancion.trackId,
+        name: cancion.nombre,
+        artists: [{ name: cancion.artista }],
+        album: { images: [{ url: cancion.portada }] },
+        preview_url: cancion.previewUrl
+    }, btnLike);
 });
 
 // Alterna el modo aleatorio (shuffle)

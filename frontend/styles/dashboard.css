@@ -241,6 +241,14 @@ body {
     color: #000000;
 }
 
+/* Avatar de perfil en el header (reemplaza al icono genérico) */
+.header .perfil .header-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
 /* ---------- 5. CONTENIDO PRINCIPAL Y VISTAS ---------- */
 
 .main-content {
@@ -536,6 +544,30 @@ body {
     color: #B3B3B3;
 }
 
+/* Corazón "me gusta" del reproductor (estilo Spotify) */
+.btn-like-reproductor {
+    background: none;
+    border: none;
+    color: #B3B3B3;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 6px;
+    transition: color 0.2s, transform 0.1s;
+}
+
+.btn-like-reproductor:hover {
+    color: #FFFFFF;
+    transform: scale(1.1);
+}
+
+.btn-like-reproductor.activo {
+    color: #1DB954;
+}
+
+.btn-like-reproductor.activo:hover {
+    color: #1ed760;
+}
+
 /* Controles centrales (botones + barra de progreso) */
 .controles-centrales {
     display: flex;
@@ -747,6 +779,37 @@ body {
 .perfil-dato.premium {
     color: #1DB954;               /* verde Spotify */
     font-weight: 700;
+}
+
+/* Tabs de rango de tiempo (4 semanas / 6 meses / todo) */
+.top-tabs {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: -6px 0 10px;
+}
+
+.top-tabs button {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: none;
+    background: rgba(29, 185, 84, 0.15);
+    color: #FFFFFF;
+    font-family: "Poppins", sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+}
+
+.top-tabs button:hover {
+    background: rgba(29, 185, 84, 0.3);
+}
+
+.top-tabs button.activo {
+    background: #1DB954;
+    color: #000000;
 }
 
 /* ---------- 9. TOP TRACKS ---------- */

@@ -8,10 +8,12 @@ import { escaparHTML, PORTADA_DEFECTO } from '../utils.js';
 import { crearTarjetaTopTrack } from '../componentes.js';
 import { nombreUsuario } from '../sesion.js';
 
-// Evita cargar varias veces si el usuario alterna de vista
+// Evita cargar varias veces si el usuario alterna de vista.
+// El rango de tiempo seleccionado en los tabs se aplica a top-artistas/tracks.
 let perfilCargado = false;
 let topArtistasCargado = false;
 let topTracksCargado = false;
+let rangoActual = 'medium_term';
 
 function cargarPerfilSpotify() {
     if (perfilCargado) return;
@@ -61,18 +63,6 @@ function cargarPerfilSpotify() {
                     <p class="perfil-dato">Spotify</p>
                 </div>
             `;
-
-            // Foto en el header (solo si el usuario tiene imagen)
-            if (perfil.imagen) {
-                const headerPerfil = document.querySelector('.header .perfil');
-                if (!headerPerfil.querySelector('img')) {
-                    const imgHeader = document.createElement('img');
-                    imgHeader.src = perfil.imagen;
-                    imgHeader.alt = 'Foto';
-                    imgHeader.style.cssText = 'width: 28px; height: 28px; border-radius: 50%; object-fit: cover;';
-                    headerPerfil.insertBefore(imgHeader, headerPerfil.firstChild);
-                }
-            }
         })
         .catch(error => {
             console.error('Error al cargar perfil:', error);
@@ -95,7 +85,7 @@ function cargarTopArtistas() {
     const contenedor = document.querySelector('#top-artistas');
     contenedor.innerHTML = '<div class="perfil-loading"><i class="fa-solid fa-spinner fa-spin"></i></div>';
 
-    API.topArtistas()
+    API.topArtistas(rangoActual)
         .then(data => {
             topArtistasCargado = true;
 
@@ -147,7 +137,7 @@ function cargarTopTracks() {
     const contenedor = document.querySelector('#top-tracks');
     contenedor.innerHTML = '<div class="perfil-loading"><i class="fa-solid fa-spinner fa-spin"></i></div>';
 
-    API.topTracks()
+    API.topTracks(rangoActual)
         .then(data => {
             topTracksCargado = true;
 
@@ -167,6 +157,28 @@ function cargarTopTracks() {
             console.error('Error al cargar top tracks:', error);
             contenedor.innerHTML = '<p class="sin-resultados">Error al cargar las canciones.</p>';
         });
+}
+
+// Tabs de rango de tiempo (4 semanas / 6 meses / todo): recargan las estadísticas
+const tabsTop = document.querySelector('#top-tabs');
+if (tabsTop) {
+    tabsTop.querySelectorAll('button').forEach(boton => {
+        boton.addEventListener('click', () => {
+            const rango = boton.dataset.rango;
+            if (!rango || rango === rangoActual) return;
+
+            rangoActual = rango;
+            tabsTop.querySelectorAll('button').forEach(b => {
+                b.classList.toggle('activo', b === boton);
+            });
+
+            // Invalida el cache del rango anterior y recarga
+            topArtistasCargado = false;
+            topTracksCargado = false;
+            cargarTopArtistas();
+            cargarTopTracks();
+        });
+    });
 }
 
 export { cargarPerfilSpotify, cargarTopArtistas, cargarTopTracks };

@@ -62,7 +62,7 @@
 
             <!-- Perfil del usuario logueado + botón logout -->
             <div class="perfil">
-                <i class="fa-solid fa-user"></i>
+                <i class="fa-solid fa-user" id="perfil-icono-header"></i>
                 <span id="nombre-perfil">Usuario</span>
                 <button id="btn-logout" title="Cerrar sesión">
                     <i class="fa-solid fa-right-from-bracket"></i>
@@ -109,6 +109,14 @@
                 </div>
 
                 <!-- Top artistas y top canciones (cada uno en su propio contenedor) -->
+                <h2 class="vista-titulo">Tus estadísticas</h2>
+
+                <div class="top-tabs" id="top-tabs">
+                    <button class="activo" data-rango="short_term">4 semanas</button>
+                    <button data-rango="medium_term">6 meses</button>
+                    <button data-rango="long_term">Todo el tiempo</button>
+                </div>
+
                 <h2 class="vista-titulo">Tus artistas favoritos</h2>
                 <div id="top-artistas" class="grid-tarjetas"></div>
 
@@ -127,6 +135,9 @@
                     <span class="nombre" id="reproductor-nombre">Sin reproducir</span>
                     <span class="artista" id="reproductor-artista">-</span>
                 </div>
+                <button id="btn-like-reproductor" class="btn-like-reproductor" title="Guardar en tus favoritos">
+                    <i class="fa-regular fa-heart"></i>
+                </button>
             </div>
 
             <!-- Controles centrales del reproductor -->

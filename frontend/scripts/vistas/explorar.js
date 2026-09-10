@@ -23,7 +23,14 @@ export function cargarExplorar() {
     // Si ya hay resultados de búsqueda o un detalle (álbum/playlist), no los piso
     if (vista.querySelector('.tarjeta-cancion') || vista.querySelector('.album-encabezado')) return;
     if (explorarCargado) return;
+
+    renderizarExplorar();
+}
+
+// Renderiza el contenido inicial de Explorar (destacadas + lanzamientos)
+function renderizarExplorar() {
     explorarCargado = true;
+    const vista = document.querySelector('#vista-explorar');
 
     vista.innerHTML = `
         <div class="loading-container">
@@ -79,3 +86,10 @@ const linkExplorar = [...document.querySelectorAll('.sidebar a')]
 if (linkExplorar) {
     linkExplorar.addEventListener('click', cargarExplorar);
 }
+
+// "Volver" de un detalle abierto desde Explorar (ej: álbum de Lanzamientos):
+// vuelve a mostrar el contenido inicial aunque no haya búsqueda previa.
+window.addEventListener('volver-a-explorar', () => {
+    pedirVistaExplorar();
+    renderizarExplorar();
+});
