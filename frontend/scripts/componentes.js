@@ -139,8 +139,9 @@ export function crearTarjetaAlbum(album, alAbrirAlbum) {
     return tarjeta;
 }
 
-// Tarjeta de playlist (abre Spotify al click)
-export function crearTarjetaPlaylist(playlist) {
+// Tarjeta de playlist. Si se pasa alAbrirPlaylist(id), abre el detalle
+// en la app; si no, abre Spotify en otra pestaña (playlists del home).
+export function crearTarjetaPlaylist(playlist, alAbrirPlaylist) {
     const portadaUrl = playlist.images?.[0]?.url || PORTADA_DEFECTO;
 
     const tarjeta = document.createElement('div');
@@ -159,7 +160,11 @@ export function crearTarjetaPlaylist(playlist) {
     dueno.textContent = playlist.owner?.display_name ?? 'Desconocido';
     tarjeta.appendChild(dueno);
 
-    if (playlist.external_urls?.spotify) {
+    if (typeof alAbrirPlaylist === 'function') {
+        tarjeta.addEventListener('click', () => {
+            alAbrirPlaylist(playlist.id);
+        });
+    } else if (playlist.external_urls?.spotify) {
         tarjeta.addEventListener('click', () => {
             window.open(playlist.external_urls.spotify, '_blank');
         });
@@ -198,4 +203,59 @@ export function agregarSeccion(contenedor, tituloTexto, items, funcionTarjeta) {
 
     contenedor.appendChild(crearTituloSeccion(tituloTexto));
     tarjetas.forEach(tarjeta => contenedor.appendChild(tarjeta));
+}
+
+// Lista de canciones de un detalle (álbum o playlist): número, nombre,
+// artista, duración y botón play. Compartida para no duplicar maquetado.
+export function crearListaTracks(tracks, portada) {
+    const lista = document.createElement('div');
+    lista.classList.add('album-lista');
+
+    (tracks || []).forEach((track, index) => {
+        const cancion = document.createElement('div');
+        cancion.classList.add('album-cancion');
+
+        const posicion = document.createElement('span');
+        posicion.classList.add('album-cancion-numero');
+        posicion.textContent = index + 1;
+        cancion.appendChild(posicion);
+
+        const infoCancion = document.createElement('div');
+        infoCancion.classList.add('album-cancion-info');
+
+        const nombreCancion = document.createElement('p');
+        nombreCancion.textContent = track.name;
+        infoCancion.appendChild(nombreCancion);
+
+        const artistaCancion = document.createElement('p');
+        artistaCancion.textContent = track.artists?.map(a => a.name).join(', ') || 'Desconocido';
+        infoCancion.appendChild(artistaCancion);
+
+        cancion.appendChild(infoCancion);
+
+        const duracion = document.createElement('span');
+        duracion.classList.add('album-cancion-duracion');
+        duracion.textContent = formatearTiempo((track.duration_ms || 0) / 1000);
+        cancion.appendChild(duracion);
+
+        if (track.preview_url) {
+            const btnPlayCancion = document.createElement('button');
+            btnPlayCancion.classList.add('album-cancion-play');
+            btnPlayCancion.innerHTML = '<i class="fa-solid fa-play"></i>';
+            btnPlayCancion.addEventListener('click', (e) => {
+                e.stopPropagation();
+                reproducirPreview(
+                    track.preview_url,
+                    track.name,
+                    track.artists?.[0]?.name ?? 'Desconocido',
+                    portada
+                );
+            });
+            cancion.appendChild(btnPlayCancion);
+        }
+
+        lista.appendChild(cancion);
+    });
+
+    return lista;
 }

@@ -11,6 +11,8 @@ import { cargarPlaylists } from './vistas/inicio.js';
 // Carga los listeners de la barra lateral y del buscador
 import { mostrarVista } from './navegacion.js';
 import './vistas/busqueda.js';
+// Carga los listeners del contenido inicial de Explorar
+import './vistas/explorar.js';
 
 // Saludo dinámico del header según la hora
 document.querySelector('#greeting').textContent = `${saludoSegunHora()}, ${nombreUsuario}`;

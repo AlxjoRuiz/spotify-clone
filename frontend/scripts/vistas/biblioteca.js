@@ -4,8 +4,9 @@
 // ============================================================
 
 import API from '../api.js';
-import { crearTarjetaCancion } from '../componentes.js';
+import { crearTarjetaCancion, crearTarjetaPlaylist } from '../componentes.js';
 import { obtenerFavoritos } from '../favoritos.js';
+import { cargarPlaylistDetalle } from './playlist.js';
 
 // Canciones escuchadas recientemente en Spotify
 export function cargarCancionesRecientes() {
@@ -68,4 +69,37 @@ export async function cargarFavoritos() {
         const tarjeta = crearTarjetaCancion(track);
         if (tarjeta) contenedor.appendChild(tarjeta);
     });
+}
+
+// Playlists del usuario en la sección #mis-playlists de la Biblioteca.
+// Cada tarjeta abre el detalle con sus canciones.
+export function cargarMisPlaylists() {
+    const contenedor = document.querySelector('#mis-playlists');
+    if (!contenedor) return;
+
+    contenedor.innerHTML = `
+        <div class="perfil-loading">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <p>Cargando tus playlists...</p>
+        </div>
+    `;
+
+    API.misPlaylists()
+        .then(data => {
+            contenedor.innerHTML = '';
+
+            if (!data.playlists || data.playlists.length === 0) {
+                contenedor.innerHTML = '<p class="sin-resultados">No tenés playlists todavía. Creá una en Spotify y volvé a entrar.</p>';
+                return;
+            }
+
+            data.playlists.forEach(playlist => {
+                const tarjeta = crearTarjetaPlaylist(playlist, cargarPlaylistDetalle);
+                if (tarjeta) contenedor.appendChild(tarjeta);
+            });
+        })
+        .catch(error => {
+            console.error('Error al cargar tus playlists:', error);
+            contenedor.innerHTML = '<p class="sin-resultados">Error al cargar tus playlists. Probá de nuevo.</p>';
+        });
 }

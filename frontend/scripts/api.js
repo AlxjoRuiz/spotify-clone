@@ -12,6 +12,9 @@ async function pedir(url, opciones) {
 export const API = {
     // Spotify
     playlistsPopulares: () => pedir('/api/playlists-populares'),
+    explorar: () => pedir('/api/explorar'),
+    misPlaylists: () => pedir('/api/mis-playlists'),
+    playlistTracks: (idPlaylist) => pedir(`/api/playlists/${idPlaylist}/tracks`),
     buscar: (texto) => pedir(`/api/buscar?q=${encodeURIComponent(texto)}`),
     albumTracks: (idAlbum) => pedir(`/api/album/${idAlbum}/tracks`),
     perfil: () => pedir('/api/perfil'),

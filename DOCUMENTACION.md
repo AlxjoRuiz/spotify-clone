@@ -36,12 +36,14 @@ spotify/
 │   │   ├── favoritos.js                 -> CRUD de favoritos (sincroniza estado.js con Supabase)
 │   │   ├── reproductor.js               -> Reproductor: cola, play/pausa, shuffle, repeat, volumen
 │   │   ├── componentes.js               -> Tarjetas DOM reutilizables (canción, artista, álbum, playlist)
-│   │   ├── navegacion.js                -> Cambio de vistas + carga perezosa de Biblioteca/Perfil
+│   │   ├── navegacion.js                -> Cambio de vistas + carga perezosa de Biblioteca/Perfil + router por eventos
 │   │   └── vistas/
 │   │       ├── inicio.js                -> Playlists populares del home
 │   │       ├── busqueda.js              -> Buscador + historial + sugerencias
+│   │       ├── explorar.js              -> Contenido inicial de Explorar (destacadas + lanzamientos)
 │   │       ├── album.js                 -> Vista de álbum (canciones + volver a resultados)
-│   │       ├── biblioteca.js            -> Canciones recientes + lista de favoritos
+│   │       ├── playlist.js              -> Vista de playlist del usuario (canciones + volver a Biblioteca)
+│   │       ├── biblioteca.js            -> Canciones recientes + favoritos + tus playlists
 │   │       └── perfil.js                -> Perfil, top artistas y top tracks
 │   └── styles/
 │       ├── login.css                  -> Estilos del login (glassmorphism, video de fondo)
@@ -199,11 +201,10 @@ Este helper lo usan todas las rutas de la API (`/api/canciones`, `/api/perfil`, 
 | `/api/top-tracks` | GET | Las 10 canciones más escuchadas (soporta `?time_range=short/medium/long_term`) |
 | `/api/canciones` | GET | Canciones escuchadas recientemente |
 | `/api/playlists-populares` | GET | Playlists populares de distintos géneros |
+| `/api/explorar` | GET | Contenido inicial de Explorar: playlists destacadas (`playlists`) + lanzamientos recientes (`nuevos`) |
+| `/api/mis-playlists` | GET | Playlists del usuario logueado (requiere scope `playlist-read-private`) |
+| `/api/playlists/:id/tracks` | GET | Datos de la playlist + sus canciones (usado por la vista de playlist) |
 | `/api/buscar` | GET | Resultados de búsqueda (`?q=texto`) — tracks, artistas, álbumes, playlists |
-| `/api/album/:id/tracks` | GET | Canciones de un álbum específico (usado por la vista de álbum) |
-| `/api/favoritos` | GET | Todos los favoritos del usuario logueado |
-| `/api/favoritos` | POST | Agrega una canción favorita (body: trackId, nombre, artista, imagen, preview) |
-| `/api/favoritos/:trackId` | DELETE | Borra una canción de favoritos del usuario |
 | `/api/album/:id/tracks` | GET | Canciones de un álbum específico (usado por la vista de álbum) |
 | `/api/favoritos` | GET | Todos los favoritos del usuario logueado |
 | `/api/favoritos` | POST | Agrega una canción favorita (body: trackId, nombre, artista, imagen, preview) |
@@ -305,7 +306,7 @@ app.delete('/api/favoritos/:trackId', async (req, res) => {
 #### Scopes (permisos)
 
 ```js
-scope: 'user-read-private user-read-email user-read-recently-played user-top-read'
+scope: 'user-read-private user-read-email user-read-recently-played user-top-read playlist-read-private'
 ```
 
 | Scope | Para qué sirve |
@@ -314,6 +315,7 @@ scope: 'user-read-private user-read-email user-read-recently-played user-top-rea
 | `user-read-email` | Email del usuario |
 | `user-read-recently-played` | Canciones escuchadas recientemente |
 | `user-top-read` | Artistas y canciones más escuchados |
+| `playlist-read-private` | Playlists del usuario (sección "Tus playlists" de la Biblioteca) |
 
 #### Paso 1 — `/auth/spotify`: redirigir a Spotify
 
@@ -323,7 +325,7 @@ app.get('/auth/spotify', (req, res) => {
         client_id: SPOTIFY_CLIENT_ID,
         response_type: 'code',
         redirect_uri: SPOTIFY_REDIRECT_URI,
-        scope: 'user-read-private user-read-email user-read-recently-played user-top-read'
+        scope: 'user-read-private user-read-email user-read-recently-played user-top-read playlist-read-private'
     });
     res.redirect(`https://accounts.spotify.com/authorize?${params.toString()}`);
 });
@@ -373,11 +375,11 @@ El frontend usa **ES Modules** (`<script type="module" src="../scripts/main.js">
 - **`api.js`** — Un solo objeto `API` con todos los fetch del backend (playlists, búsqueda, album, perfil, top, favoritos).
 - **`favoritos.js`** — `obtenerFavoritos()` y `guardarFavorito()` (toggle) que sincronizan `estado.js` con Supabase.
 - **`reproductor.js`** — Cola de canciones, play/pausa, anterior/siguiente, **shuffle (aleatorio)**, **repeat (repetir lista/canción)**, volumen y barra de progreso. Exporta `reproducirPreview()`.
-- **`componentes.js`** — Creadores de tarjetas (`crearTarjetaCancion`, artista, álbum, playlist, top track) y `agregarSeccion()`. Las tarjetas de álbum reciben un callback para abrir la vista sin crear dependencias circulares.
-- **`navegacion.js`** — `mostrarVista()` y los clics del sidebar con **carga perezosa** (Biblioteca/Perfil piden datos solo la primera vez).
-- **`vistas/`** — Una vista por archivo, bajo `inicio.js`, `busqueda.js`, `album.js`, `biblioteca.js` y `perfil.js`.
+- **`componentes.js`** — Creadores de tarjetas (`crearTarjetaCancion`, artista, álbum, playlist, top track), `agregarSeccion()` y `crearListaTracks()` (lista de canciones compartida por álbumes y playlists). Las tarjetas de álbum y playlist reciben un callback para abrir el detalle sin crear dependencias circulares.
+- **`navegacion.js`** — `mostrarVista()`, los clics del sidebar y un **router por eventos** (`mostrar-vista`) que cualquier módulo puede disparar para navegar sin importar navegación. Biblioteca/Perfil usan **carga perezosa**.
+- **`vistas/`** — Una vista por archivo: `inicio.js`, `busqueda.js`, `explorar.js`, `album.js`, `playlist.js`, `biblioteca.js` y `perfil.js`.
 
-> **Comunicación entre módulos sin ciclos:** la vista de álbum usa el botón "Volver a resultados" emitiendo el evento `volver-a-resultados`, que la vista de búsqueda escucha con `window.addEventListener()`. Así `album.js` no importa `busqueda.js`.
+> **Comunicación entre módulos sin ciclos:** las vistas que necesitan navegar (explorar, playlist) disparan el evento `mostrar-vista` en `window`, que `navegacion.js` interpreta. La vista de álbum emite `volver-a-resultados` para volver a la búsqueda. Así ningún módulo de vista importa a otro de forma circular.
 
 ### 5.2 Funciones principales del frontend
 
@@ -387,14 +389,18 @@ El frontend usa **ES Modules** (`<script type="module" src="../scripts/main.js">
 | `reproducirPorIndice()` | `reproductor.js` | Reproduce una canción específica de la cola |
 | `ejecutarBusqueda()` | `vistas/busqueda.js` | Guarda en historial, pide resultados a `/api/buscar` y los dibuja |
 | `cargarPlaylists()` | `vistas/inicio.js` | Carga las playlists del home |
+| `cargarExplorar()` | `vistas/explorar.js` | Carga el contenido inicial de Explorar (destacadas + lanzamientos), solo si la vista está vacía |
 | `cargarCancionesRecientes()` | `vistas/biblioteca.js` | Pide canciones recientes a `/api/canciones` |
+| `cargarMisPlaylists()` | `vistas/biblioteca.js` | Pide las playlists del usuario a `/api/mis-playlists` y las dibuja |
+| `cargarPlaylistDetalle()` | `vistas/playlist.js` | Muestra una playlist del usuario con sus canciones |
 | `cargarPerfilSpotify()` | `vistas/perfil.js` | Pide el perfil a `/api/perfil` y lo dibuja |
 | `cargarTopArtistas()` | `vistas/perfil.js` | Pide artistas a `/api/top-artistas` y los dibuja |
 | `cargarTopTracks()` | `vistas/perfil.js` | Pide tracks a `/api/top-tracks` y los dibuja |
 | `crearTarjetaCancion()` | `componentes.js` | Crea una tarjeta de canción reutilizable (play + corazón) |
 | `crearTarjetaArtista()` | `componentes.js` | Crea una tarjeta de artista (foto circular) |
 | `crearTarjetaAlbum()` | `componentes.js` | Crea una tarjeta de álbum (abre la vista de álbum vía callback) |
-| `crearTarjetaPlaylist()` | `componentes.js` | Crea una tarjeta de playlist |
+| `crearTarjetaPlaylist()` | `componentes.js` | Crea una tarjeta de playlist (callback opcional para abrir el detalle) |
+| `crearListaTracks()` | `componentes.js` | Lista de canciones con play (compartida por álbumes y playlists) |
 | `crearBotonFavorito()` | `componentes.js` | Crea el botón corazón de una tarjeta |
 | `cargarAlbum()` | `vistas/album.js` | Muestra la vista de un álbum con sus canciones |
 | `guardarFavorito()` | `favoritos.js` | Agrega o quita una canción de favoritos (toggle corazón en Supabase) |
@@ -405,8 +411,10 @@ El frontend usa **ES Modules** (`<script type="module" src="../scripts/main.js">
 
 Todas las funciones de carga muestran un spinner (`fa-spinner fa-spin`) mientras esperan los datos:
 - Playlists del home
+- Contenido inicial de Explorar
 - Búsqueda en Explorar
 - Canciones recientes en Biblioteca
+- Playlists del usuario en Biblioteca
 - Perfil y top artistas/tracks en Perfil
 
 Si falla, muestran un mensaje de error con `sin-resultados`.
@@ -525,6 +533,6 @@ node index.js
 - Dashboard: http://127.0.0.1:3000/pages/dashboard.html (requiere login)
 - Test del servidor: http://127.0.0.1:3000/
 
-> **Nota:** los usuarios necesitan volver a loguearse tras agregar el scope `user-top-read` para autorizar los permisos nuevos.
+> **Nota:** los usuarios necesitan volver a loguearse tras agregar un scope nuevo (`user-top-read`, `playlist-read-private`) para autorizar los permisos nuevos.
 
 > Las sesiones viven en la memoria del servidor: si lo reiniciás, el usuario se desloguea y tiene que volver a entrar con Spotify.

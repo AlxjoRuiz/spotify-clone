@@ -4,7 +4,7 @@
 // al backend solo la primera vez que se visita.
 // ============================================================
 
-import { cargarCancionesRecientes, cargarFavoritos } from './vistas/biblioteca.js';
+import { cargarCancionesRecientes, cargarFavoritos, cargarMisPlaylists } from './vistas/biblioteca.js';
 import { cargarPerfilSpotify, cargarTopArtistas, cargarTopTracks } from './vistas/perfil.js';
 
 const linksSidebar = document.querySelectorAll('.sidebar a');
@@ -30,21 +30,35 @@ export function mostrarVista(textoLink) {
     if (idVista) document.querySelector(`#${idVista}`).classList.add('activa');
 }
 
+// Carga perezosa: solo pide los datos que necesita cada vista
+function cargarDatosDeVista(texto) {
+    if (texto === 'Biblioteca') {
+        cargarCancionesRecientes();
+        cargarFavoritos();
+        cargarMisPlaylists();
+    } else if (texto === 'Perfil') {
+        cargarPerfilSpotify();
+        cargarTopArtistas();
+        cargarTopTracks();
+    }
+}
+
 linksSidebar.forEach(link => {
     link.addEventListener('click', (e) => {
         e.preventDefault();
 
         const texto = link.textContent.trim();
         mostrarVista(texto);
-
-        // Carga perezosa: solo se pide lo que se necesita en cada vista
-        if (texto === 'Biblioteca') {
-            cargarCancionesRecientes();
-            cargarFavoritos();
-        } else if (texto === 'Perfil') {
-            cargarPerfilSpotify();
-            cargarTopArtistas();
-            cargarTopTracks();
-        }
+        cargarDatosDeVista(texto);
     });
+});
+
+// Router por eventos: cualquier módulo puede pedir mostrar una vista
+// sin importar navegación.js (evita dependencias circulares).
+window.addEventListener('mostrar-vista', (e) => {
+    const texto = e.detail?.texto;
+    if (texto && ID_VISTAS[texto]) {
+        mostrarVista(texto);
+        cargarDatosDeVista(texto);
+    }
 });

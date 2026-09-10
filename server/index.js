@@ -40,7 +40,8 @@ const SPOTIFY_REDIRECT_URI = process.env.SPOTIFY_REDIRECT_URI;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const SCOPE_SPOTIFY = 'user-read-private user-read-email user-read-recently-played user-top-read';
+// playlist-read-private permite listar las playlists del usuario (Biblioteca)
+const SCOPE_SPOTIFY = 'user-read-private user-read-email user-read-recently-played user-top-read playlist-read-private';
 const RANGOS_DE_TIEMPO = ['short_term', 'medium_term', 'long_term'];
 
 // ------------------------------------------------------------------
@@ -324,6 +325,63 @@ app.get('/api/playlists-populares', async (req, res) => {
     } catch (error) {
         console.error(error.response?.data || error.message);
         res.status(500).json({ error: 'No se pudieron obtener las playlists' });
+    }
+});
+
+// Contenido inicial de Explorar: playlists destacadas + lanzamientos recientes
+app.get('/api/explorar', async (req, res) => {
+    try {
+        const [destacadas, lanzamientos] = await Promise.all([
+            pedirASpotify('https://api.spotify.com/v1/browse/featured-playlists?limit=8&market=CO', req),
+            pedirASpotify('https://api.spotify.com/v1/browse/new-releases?limit=8&market=CO', req)
+        ]);
+
+        res.json({
+            playlists: destacadas.playlists?.items ?? [],
+            nuevos: lanzamientos.albums?.items ?? []
+        });
+
+    } catch (error) {
+        console.error(error.response?.data || error.message);
+        res.status(500).json({ error: 'No se pudo obtener el contenido de Explorar' });
+    }
+});
+
+// Playlists del usuario (requiere scope playlist-read-private)
+app.get('/api/mis-playlists', async (req, res) => {
+    try {
+        const data = await pedirASpotify('https://api.spotify.com/v1/me/playlists?limit=20', req);
+        res.json({ playlists: data.items ?? [] });
+
+    } catch (error) {
+        console.error(error.response?.data || error.message);
+        res.status(500).json({ error: 'No se pudieron obtener tus playlists' });
+    }
+});
+
+// Canciones de una playlist específica (y datos de la playlist)
+app.get('/api/playlists/:id/tracks', async (req, res) => {
+    try {
+        const [tracksData, playlistData] = await Promise.all([
+            pedirASpotify(`https://api.spotify.com/v1/playlists/${req.params.id}/tracks?limit=50&market=CO`, req),
+            pedirASpotify(`https://api.spotify.com/v1/playlists/${req.params.id}?market=CO`, req)
+        ]);
+
+        res.json({
+            playlist: {
+                id: playlistData.id,
+                nombre: playlistData.name,
+                dueno: playlistData.owner?.display_name ?? 'Desconocido',
+                portada: playlistData.images?.[0]?.url ?? null,
+                total_canciones: playlistData.tracks?.total ?? 0
+            },
+            // Cada item de una playlist puede venir null si la canción se eliminó
+            tracks: (tracksData.items ?? []).map(item => item.track).filter(track => track)
+        });
+
+    } catch (error) {
+        console.error(error.response?.data || error.message);
+        res.status(500).json({ error: 'No se pudieron obtener las canciones de la playlist' });
     }
 });
 
