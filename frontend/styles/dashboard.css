@@ -1,4 +1,10 @@
-/* TEMA SPOTIFY */
+/* ============================================================
+   DASHBOARD CSS — Tema Spotify oscuro
+   Ordenado por bloques: base, layout, sidebar, header, vistas,
+   tarjetas, reproductor, perfil, álbum, favoritos, responsive.
+   ============================================================ */
+
+/* ---------- 1. TEMA BASE ---------- */
 
 body {
     margin: 0;
@@ -7,7 +13,7 @@ body {
     color: #FFFFFF;
 }
 
-/* LAYOUT */
+/* ---------- 2. LAYOUT PRINCIPAL ---------- */
 
 .dashboard-container {
     display: grid;
@@ -20,7 +26,7 @@ body {
     height: 100vh;
 }
 
-/* SIDEBAR */
+/* ---------- 3. SIDEBAR (navegación + buscador) ---------- */
 
 .sidebar {
     grid-area: sidebar;
@@ -43,14 +49,19 @@ body {
     transition: color 0.2s;
 }
 
+.sidebar a:hover {
+    color: #FFFFFF;              /* blanco al pasar el mouse */
+}
+
 .sidebar nav ul {
     list-style: none;
     margin: 0;
     padding: 0;
 }
 
-.sidebar a:hover {
-    color: #FFFFFF;              /* blanco al pasar el mouse */
+/* Link activo del sidebar */
+.sidebar a.activo {
+    color: #1DB954;
 }
 
 /* Buscador en el sidebar */
@@ -91,7 +102,32 @@ body {
     transform: scale(1.05);
 }
 
-/* HEADER (barra superior */
+/* Sugerencias de búsquedas recientes (chips debajo del buscador) */
+#sugerencias-busqueda {
+    display: flex;
+    flex-wrap: wrap;              /* las sugerencias bajan de línea si no caben */
+    gap: 6px;
+    margin-bottom: 16px;
+}
+
+.sugerencia-busqueda {
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: none;
+    background: #282828;          /* gris oscuro */
+    color: #B3B3B3;               /* texto gris claro */
+    font-size: 0.7rem;
+    font-family: "Poppins", sans-serif;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.sugerencia-busqueda:hover {
+    background: #1DB954;          /* verde Spotify al pasar el mouse */
+    color: #000000;
+}
+
+/* ---------- 4. HEADER (saludo + perfil + logout) ---------- */
 
 .header {
     grid-area: header;
@@ -132,7 +168,7 @@ body {
     color: #FFFFFF;
 }
 
-/* CONTENIDO PRINCIPAL */
+/* ---------- 5. CONTENIDO PRINCIPAL Y VISTAS ---------- */
 
 .main-content {
     grid-area: main;
@@ -150,73 +186,6 @@ body {
     font-size: 1.3rem;
     font-weight: 700;
     margin: 20px 0 10px;
-}
-
-/*
-   TARJETAS (canciones / playlists)
-   MANTIENE EL EFECTO DEGRADADO/HOVER */
-
-.tarjeta-cancion {
-    background-color: #181818;     /* gris oscuro Spotify */
-    border-radius: 8px;
-    padding: 16px;
-    transition: background-color 0.3s ease;
-    position: relative;
-    overflow: hidden;
-    cursor: pointer;
-}
-
-.tarjeta-cancion:hover {
-    background-color: #282828;     /* se ilumina al pasar */
-}
-
-/* Imagen de portada */
-.tarjeta-cancion img {
-    width: 100%;
-    aspect-ratio: 1;             /* cuadradas como Spotify */
-    object-fit: cover;
-    border-radius: 4px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-    position: relative;
-    z-index: 1;
-}
-
-/* Efecto degradado de fondo (EL QUE YA TENÍAS) */
-.tarjeta-cancion::before {
-    content: ' ';
-    position: absolute;
-    inset: 0;
-    background-image: var(--portada-url);
-    background-size: cover;
-    filter: blur(30px) brightness(0.5);
-    z-index: 0;
-    opacity: 0;
-    transition: opacity 0.4s ease;
-}
-
-.tarjeta-cancion:hover::before {
-    opacity: 1;                   /* aparece el degradado al hover */
-}
-
-/* Textos de la tarjeta */
-.tarjeta-cancion p {
-    font-family: "Poppins", sans-serif;
-    position: relative;
-    z-index: 1;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
-    margin: 8px 0 0;
-    font-weight: 600;
-}
-
-.tarjeta-cancion p:last-child {
-    color: #B3B3B3;              /* subtítulo en gris */
-    font-weight: 400;
-    font-size: 0.85rem;
-}
-
-/* Link activo del sidebar */
-.sidebar a.activo {
-    color: #1DB954;
 }
 
 /* Vistas del dashboard (se muestra solo la activa) */
@@ -241,7 +210,7 @@ body {
     gap: 20px;
 }
 
-/* Título de cada sección */
+/* Título de cada vista */
 .vista-titulo {
     grid-column: 1 / -1;
     font-size: 1.4rem;
@@ -249,7 +218,95 @@ body {
     margin: 10px 0 15px;
 }
 
-/* Botón de play que aparece al hover en la tarjeta */
+/* Título de cada sección dentro de Explorar (Canciones, Artistas, etc.) */
+.seccion-titulo {
+    grid-column: 1 / -1;          /* ocupa todo el ancho */
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 15px 0 5px;
+}
+
+/* Mensaje cuando la búsqueda no devuelve nada */
+.sin-resultados {
+    grid-column: 1 / -1;
+    color: #B3B3B3;
+}
+
+/* ---------- 6. TARJETAS ---------- */
+/* Canciones / playlists / artistas. Mantienen el efecto degradado y hover. */
+
+.tarjeta-cancion {
+    position: relative;
+    background-color: #181818;    /* gris oscuro Spotify */
+    border-radius: 8px;
+    padding: 16px;
+    width: 100%;
+    max-width: 180px;             /* tope de ancho para que no se estire */
+    aspect-ratio: auto;
+    overflow: hidden;             /* oculta lo que sobresalga */
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.tarjeta-cancion:hover {
+    background-color: #282828;    /* se ilumina al pasar */
+}
+
+/* Imagen de portada: cuadrada, centrada y recortada */
+.tarjeta-cancion img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;            /* recorta la imagen sin deformarla */
+    border-radius: 4px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    position: relative;
+    z-index: 1;
+}
+
+/* Efecto degradado de fondo de la portada */
+.tarjeta-cancion::before {
+    content: ' ';
+    position: absolute;
+    inset: 0;
+    background-image: var(--portada-url);
+    background-size: cover;
+    filter: blur(30px) brightness(0.5);
+    z-index: 0;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.tarjeta-cancion:hover::before {
+    opacity: 1;                   /* aparece el degradado al hover */
+}
+
+/* Textos de la tarjeta: recortados con puntos suspensivos */
+.tarjeta-cancion p {
+    font-family: "Poppins", sans-serif;
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    margin: 6px 0 0;
+    font-weight: 600;
+}
+
+/* Subtítulo (artista/dueño) en gris más chico */
+.tarjeta-cancion p:last-child {
+    font-size: 0.8rem;
+    color: #B3B3B3;
+    font-weight: 400;
+}
+
+/* Tarjetas de artista con foto circular (como Spotify) */
+.tarjeta-artista img {
+    border-radius: 50%;
+}
+
+/* Botón de play que aparece al hover de la tarjeta */
 .btn-play {
     position: absolute;
     bottom: 16px;
@@ -282,39 +339,8 @@ body {
     background: #1ed760;
 }
 
-/*TARJETAS: tamaño fijo + texto recortado */
+/* ---------- 7. REPRODUCTOR (barra inferior) ---------- */
 
-/* Cada tarjeta ocupa el mismo espacio y no crece */
-.tarjeta-cancion {
-    width: 100%;
-    max-width: 180px;            /* tope de ancho para que no se estire */
-    aspect-ratio: auto;
-    overflow: hidden;            /* oculta lo que sobresalde */
-}
-
-/* Portada siempre cuadrada y centrada */
-.tarjeta-cancion img {
-    width: 100%;
-    aspect-ratio: 1;             /* cuadrado perfecto */
-    object-fit: cover;           /* recorta la imagen sin deformarla */
-}
-
-/* Textos recortados con puntos suspensivos */
-.tarjeta-cancion p {
-    white-space: nowrap;         /* no baja a la siguiente línea */
-    overflow: hidden;            /* oculta lo que sobra */
-    text-overflow: ellipsis;     /* pone "..." al final si es muy largo */
-    max-width: 100%;             /* no supera el ancho de la tarjeta */
-    margin: 6px 0 0;
-}
-
-/* Subtítulo (artista/dueño) en gris más chico */
-.tarjeta-cancion p:last-child {
-    font-size: 0.8rem;
-    color: #B3B3B3;
-}
-
-/*REPRODUCTOR (barra inferior)*/
 .reproductor {
     grid-column: 1 / -1;
     grid-row: 3;
@@ -391,7 +417,16 @@ body {
     color: #FFFFFF;
 }
 
-/* Boton play más grande */
+/* Botones de modo (aleatorio/repetir) activados en verde */
+.botones-control button.activo {
+    color: #1DB954;
+}
+
+.botones-control button.activo:hover {
+    color: #1ed760;
+}
+
+/* Botón play más grande */
 #btn-play {
     width: 36px;
     height: 36px;
@@ -424,7 +459,6 @@ body {
     text-align: center;
 }
 
-/* Input range para la barra de progreso */
 #barra-progreso {
     flex: 1;
     height: 4px;
@@ -504,7 +538,8 @@ body {
     display: none;
 }
 
-/* Vista Perfil */
+/* ---------- 8. VISTA PERFIL ---------- */
+
 .perfil-container {
     grid-column: 1 / -1;
     background: #181818;
@@ -524,6 +559,14 @@ body {
     font-size: 2.5rem;
     color: #B3B3B3;
     margin-bottom: 24px;
+}
+
+/* Avatar del perfil: puede ser foto de Spotify o icono */
+.perfil-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
 }
 
 .perfil-info {
@@ -551,266 +594,24 @@ body {
     margin: 0;
 }
 
-/* Título de cada sección dentro de Explorar (Canciones, Artistas, etc.) */
-.seccion-titulo {
-    grid-column: 1 / -1;          /* ocupa todo el ancho */
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin: 15px 0 5px;
-}
-
-/* Tarjetas de artista con foto circular (como Spotify) */
-.tarjeta-artista img {
-    border-radius: 50%;
-}
-
-/* Mensaje cuando la búsqueda no devuelve nada */
-.sin-resultados {
-    grid-column: 1 / -1;
-    color: #B3B3B3;
-}
-
-/*PERFIL DINÁMICO*/
-
-/* Avatar del perfil: puede ser foto de Spotify o icono */
-.perfil-avatar img {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    object-fit: cover;
-}
-
 /* Badge de Premium en el perfil */
 .perfil-dato.premium {
-    color: #1DB954;              /* verde Spotify */
+    color: #1DB954;               /* verde Spotify */
     font-weight: 700;
 }
 
-/* Estado de carga del perfil */
-.perfil-loading {
-    grid-column: 1 / -1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    padding: 40px 0;
-    color: #B3B3B3;
-}
+/* ---------- 9. TOP TRACKS ---------- */
+/* Número de posición (#1, #2, etc.) sobre la portada + duración */
 
-.perfil-loading i {
-    font-size: 2rem;
-    color: #1DB954;
-}
-
-/*TOP ARTISTAS*/
-
-/* Tarjetas de artista con foto circular (la grilla la da .grid-tarjetas) */
-.tarjeta-artista img {
-    border-radius: 50%;
-}
-
-/* LOADING / SPINNER GLOBAL */
-
-/* Contenedor de carga genérico */
-.loading-container {
-    grid-column: 1 / -1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    padding: 60px 0;
-    color: #B3B3B3;
-}
-
-.loading-container i {
-    font-size: 2.5rem;
-    color: #1DB954;
-}
-
-/* HISTORIAL DE BÚSQUEDAS */
-/* Contenedor de las sugerencias */
-#sugerencias-busqueda {
-    display: flex;
-    flex-wrap: wrap;        /* Las sugerencias saltan a la siguiente línea si no caben */
-    gap: 6px;
-    margin-bottom: 16px;
-}
-
-/* Cada sugerencia es un botón pequeño estilo "chip" */
-.sugerencia-busqueda {
-    padding: 4px 10px;
-    border-radius: 20px;
-    border: none;
-    background: #282828;       /* Gris oscuro */
-    color: #B3B3B3;            /* Texto gris claro */
-    font-size: 0.7rem;
-    font-family: "Poppins", sans-serif;
-    cursor: pointer;
-    transition: background 0.2s, color 0.2s;
-}
-
-.sugerencia-busqueda:hover {
-    background: #1DB954;       /* Verde Spotify al pasar el mouse */
-    color: #000000;
-}
-
-/* RESPONSIVE DESIGN (MÓVIL */
-
-/* Tablets y pantallas medianas */
-@media (max-width: 1024px) {
-    .dashboard-container {
-        grid-template-columns: 200px 1fr;
-    }
-}
-
-/* Móviles: sidebar colapsa a iconos, layout apilado */
-@media (max-width: 768px) {
-    .dashboard-container {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto auto 1fr auto;
-        grid-template-areas:
-            "header"
-            "sidebar"
-            "main"
-            "reproductor";
-    }
-
-    /* Sidebar horizontal en móvil */
-    .sidebar {
-        display: flex;
-        flex-direction: column;
-        padding: 12px 16px;
-        gap: 8px;
-    }
-
-    .sidebar h2 {
-        display: none;              /* oculta el título para ahorrar espacio */
-    }
-
-    /* Buscador ocupa todo el ancho */
-    .buscador {
-        margin-bottom: 8px;
-    }
-
-    .buscador input {
-        flex: 1;
-    }
-
-    /* Navegación horizontal */
-    .sidebar nav ul {
-        display: flex;
-        gap: 4px;
-        list-style: none;
-        margin: 0;
-        padding: 0;
-        justify-content: center;
-    }
-
-    .sidebar nav ul li a {
-        padding: 6px 12px;
-        font-size: 0.85rem;
-        border-radius: 20px;
-        background: #282828;
-    }
-
-    .sidebar nav ul li a.activo {
-        background: #1DB954;
-        color: #000000;
-    }
-
-    /* Header más compacto */
-    .header {
-        padding: 12px 16px;
-    }
-
-    .header .greeting {
-        font-size: 1.1rem;
-    }
-
-    /* Contenido principal con menos padding */
-    .main-content {
-        padding: 16px;
-    }
-
-    /* Tarjetas más pequeñas */
-    .vista.activa,
-    .grid-tarjetas {
-        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-        gap: 12px;
-    }
-
-    .tarjeta-cancion {
-        max-width: 160px;
-    }
-
-    /* Perfil más compacto */
-    .perfil-container {
-        padding: 20px;
-        max-width: 100%;
-    }
-
-    /* Reproductor: se apila en móvil */
-    .reproductor {
-        flex-direction: column;
-        gap: 8px;
-        padding: 8px 16px;
-    }
-
-    .reproductor .info-cancion {
-        min-width: auto;
-        width: 100%;
-        justify-content: center;
-    }
-
-    .controles-centrales {
-        max-width: 100%;
-    }
-
-    .control-volumen {
-        min-width: auto;
-        justify-content: center;
-    }
-
-    #barra-volumen {
-        width: 120px;
-    }
-}
-
-/* Muy pequeños (celulares) */
-@media (max-width: 480px) {
-    .vista.activa,
-    .grid-tarjetas {
-        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-        gap: 8px;
-    }
-
-    .tarjeta-cancion {
-        max-width: 140px;
-        padding: 10px;
-    }
-
-    .header .perfil span {
-        display: none;              /* oculta el nombre, solo muestra foto + logout */
-    }
-
-    .botones-control {
-        gap: 10px;
-    }
-}
-
-/* TOP TRACKS */
-
-/* Número de posición (#1, #2, etc.) posicionado sobre la portada */
 .top-track-numero {
-    position: absolute;    /* Se posiciona relative a la tarjeta */
-    top: 20px;             /* Desde arriba */
-    left: 20px;            /* Desde la izquierda */
+    position: absolute;           /* se posiciona relativo a la tarjeta */
+    top: 20px;
+    left: 20px;
     font-size: 1.5rem;
     font-weight: 900;
-    color: #B3B3B3;        /* Gris claro */
-    z-index: 2;            /* Se queda arriba de la imagen */
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);  /* Sombra para que se lea sobre cualquier portada */
+    color: #B3B3B3;
+    z-index: 2;                   /* queda arriba de la imagen */
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);  /* se lee sobre cualquier portada */
 }
 
 /* Duración de la canción (ej: "3:05") en texto chico y gris */
@@ -821,8 +622,8 @@ body {
     margin-top: 4px !important;
 }
 
+/* ---------- 10. VISTA ÁLBUM ---------- */
 
-   /* VISTA DE ÁLBUM */
 /* Encabezado del álbum: portada + info */
 .album-encabezado {
     grid-column: 1 / -1;
@@ -877,7 +678,7 @@ body {
     margin: 4px 0 0 !important;
 }
 
-/* Botón volver */
+/* Botón volver a los resultados */
 .btn-volver-busqueda {
     grid-column: 1 / -1;
     background: none;
@@ -907,7 +708,6 @@ body {
     gap: 2px;
 }
 
-/* Cada canción de la lista */
 .album-cancion {
     display: grid;
     grid-template-columns: 40px 1fr auto auto;
@@ -919,17 +719,15 @@ body {
 }
 
 .album-cancion:hover {
-    background: #ffffff10;     /* Fondo sutil al pasar el mouse */
+    background: #ffffff10;        /* fondo sutil al pasar el mouse */
 }
 
-/* Número de posición */
 .album-cancion-numero {
     color: #B3B3B3;
     font-size: 0.9rem;
     text-align: center;
 }
 
-/* Info de la canción (nombre + artista) */
 .album-cancion-info {
     display: flex;
     flex-direction: column;
@@ -955,13 +753,11 @@ body {
     margin: 0;
 }
 
-/* Duración */
 .album-cancion-duracion {
     color: #B3B3B3;
     font-size: 0.85rem;
 }
 
-/* Botón play de cada canción */
 .album-cancion-play {
     background: none;
     border: none;
@@ -981,7 +777,8 @@ body {
     color: #FFFFFF;
 }
 
-/* Botón de favorito (corazón) */
+/* ---------- 11. FAVORITOS (botón corazón) ---------- */
+
 .btn-favorito {
     position: absolute;
     top: 12px;
@@ -1012,4 +809,179 @@ body {
 
 .btn-favorito i {
     font-size: 0.85rem;
+}
+
+/* ---------- 12. ESTADOS DE CARGA ---------- */
+
+.perfil-loading {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 40px 0;
+    color: #B3B3B3;
+}
+
+.perfil-loading i {
+    font-size: 2rem;
+    color: #1DB954;
+}
+
+/* Contenedor de carga genérico (búsquedas, álbum) */
+.loading-container {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 60px 0;
+    color: #B3B3B3;
+}
+
+.loading-container i {
+    font-size: 2.5rem;
+    color: #1DB954;
+}
+
+/* ---------- 13. RESPONSIVE DESIGN ---------- */
+
+/* Tablets y pantallas medianas */
+@media (max-width: 1024px) {
+    .dashboard-container {
+        grid-template-columns: 200px 1fr;
+    }
+}
+
+/* Móviles: sidebar colapsa a iconos, layout apilado */
+@media (max-width: 768px) {
+    .dashboard-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto 1fr auto;
+        grid-template-areas:
+            "header"
+            "sidebar"
+            "main"
+            "reproductor";
+    }
+
+    /* Sidebar horizontal en móvil */
+    .sidebar {
+        display: flex;
+        flex-direction: column;
+        padding: 12px 16px;
+        gap: 8px;
+    }
+
+    .sidebar h2 {
+        display: none;            /* oculta el título para ahorrar espacio */
+    }
+
+    .buscador {
+        margin-bottom: 8px;
+    }
+
+    .buscador input {
+        flex: 1;
+    }
+
+    /* Navegación horizontal */
+    .sidebar nav ul {
+        display: flex;
+        gap: 4px;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        justify-content: center;
+    }
+
+    .sidebar nav ul li a {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+        border-radius: 20px;
+        background: #282828;
+    }
+
+    .sidebar nav ul li a.activo {
+        background: #1DB954;
+        color: #000000;
+    }
+
+    /* Header más compacto */
+    .header {
+        padding: 12px 16px;
+    }
+
+    .header .greeting {
+        font-size: 1.1rem;
+    }
+
+    .main-content {
+        padding: 16px;
+    }
+
+    /* Tarjetas más pequeñas */
+    .vista.activa,
+    .grid-tarjetas {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 12px;
+    }
+
+    .tarjeta-cancion {
+        max-width: 160px;
+    }
+
+    .perfil-container {
+        padding: 20px;
+        max-width: 100%;
+    }
+
+    /* Reproductor: se apila en móvil */
+    .reproductor {
+        flex-direction: column;
+        gap: 8px;
+        padding: 8px 16px;
+    }
+
+    .reproductor .info-cancion {
+        min-width: auto;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .controles-centrales {
+        max-width: 100%;
+    }
+
+    .control-volumen {
+        min-width: auto;
+        justify-content: center;
+    }
+
+    #barra-volumen {
+        width: 120px;
+    }
+}
+
+/* Muy pequeños (celulares) */
+@media (max-width: 480px) {
+    .vista.activa,
+    .grid-tarjetas {
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        gap: 8px;
+    }
+
+    .tarjeta-cancion {
+        max-width: 140px;
+        padding: 10px;
+    }
+
+    .header .perfil span {
+        display: none;            /* oculta el nombre, solo muestra foto + logout */
+    }
+
+    .botones-control {
+        gap: 10px;
+    }
 }

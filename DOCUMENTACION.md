@@ -28,7 +28,21 @@ spotify/
 │   │   ├── login.html                 -> Página de login (botón "Log in to Spotify")
 │   │   └── dashboard.html             -> Dashboard protegido (4 vistas)
 │   ├── scripts/
-│   │   └── dashboard.js               -> TODO el JS del frontend organizado por secciones
+│   │   ├── main.js                      -> Punto de entrada (ES modules): saludo + carga inicial
+│   │   ├── utils.js                     -> Helpers (formatearTiempo, escaparHTML, saludoSegunHora)
+│   │   ├── sesion.js                    -> Nombre de usuario, redirección y logout
+│   │   ├── estado.js                    -> Estado global de favoritos (corazones sincronizados)
+│   │   ├── api.js                       -> Cliente HTTP para todos los endpoints /api/*
+│   │   ├── favoritos.js                 -> CRUD de favoritos (sincroniza estado.js con Supabase)
+│   │   ├── reproductor.js               -> Reproductor: cola, play/pausa, shuffle, repeat, volumen
+│   │   ├── componentes.js               -> Tarjetas DOM reutilizables (canción, artista, álbum, playlist)
+│   │   ├── navegacion.js                -> Cambio de vistas + carga perezosa de Biblioteca/Perfil
+│   │   └── vistas/
+│   │       ├── inicio.js                -> Playlists populares del home
+│   │       ├── busqueda.js              -> Buscador + historial + sugerencias
+│   │       ├── album.js                 -> Vista de álbum (canciones + volver a resultados)
+│   │       ├── biblioteca.js            -> Canciones recientes + lista de favoritos
+│   │       └── perfil.js                -> Perfil, top artistas y top tracks
 │   └── styles/
 │       ├── login.css                  -> Estilos del login (glassmorphism, video de fondo)
 │       └── dashboard.css              -> Estilos del dashboard (tema Spotify oscuro, responsive)
@@ -348,46 +362,44 @@ app.listen(PORT, () => {
 
 ## 5. El código del frontend, documentado
 
-### 5.1 dashboard.js — Estructura general
+### 5.1 Estructura de módulos del frontend
 
-El archivo está dividido en 14 secciones numeradas con comentarios `// ---`:
+El frontend usa **ES Modules** (`<script type="module" src="../scripts/main.js">`). Cada responsabilidad vive en su propio archivo y se importa/exporta explícitamente, eliminando el monolito de `dashboard.js`:
 
-1. **Utilidades** — `formatearTiempo()`, `escaparHTML()` (previene inyección).
-2. **Sesión** — Lee el nombre de la URL/localStorage, valida la sesión, configura logout.
-3. **Saludo dinámico** — "Buenos días" / "Buenas tardes" / "Buenas noches".
-4. **Navegación entre vistas** — Cambia entre Inicio, Explorar, Biblioteca y Perfil.
-5. **Favoritos (estado global)** — Set de ids + `guardarFavorito()` (toggle), `cargarFavoritos()` y `obtenerFavoritos()`.
-6. **Reproductor** — Cola de canciones, play/pausa, anterior/siguiente, volumen, barra de progreso.
-7. **Creadores de tarjetas** — `crearTarjetaCancion()` (con corazón y play), artista, álbum, playlist.
-8. **Inicio: playlists populares** — Carga y dibuja las playlists del home.
-9. **Búsqueda + historial** — Buscador con Enter y botón; historial (últimas 5) en `localStorage`.
-10. **Vista de álbum** — Canciones de un álbum con encabezado, botón volver y lista.
-11. **Biblioteca: canciones recientes** — Las últimas escuchadas.
-12. **Perfil, top artistas y top tracks** — Datos reales de Spotify + tarjetas con número y duración.
-13. **Navegación (carga perezosa)** — Al entrar a Biblioteca/Perfil se cargan sus datos.
-14. **Inicialización** — Playlists del home + estado de favoritos para los corazones.
+- **`main.js`** — Punto de entrada: pinta el saludo dinámico, carga playlists del home y el estado de favoritos.
+- **`utils.js`** — Helpers puros: `formatearTiempo()`, `escaparHTML()` (anti-XSS), `saludoSegunHora()`.
+- **`sesion.js`** — Lee el nombre de la URL/localStorage, redirige a `login.html` si no hay sesión y configura el logout.
+- **`estado.js`** — Estado global de favoritos (`favoritosIds`), consultable con `esFavorito()` y modificable solo vía `setFavoritosIds()` / `actualizarFavoritoLocal()`.
+- **`api.js`** — Un solo objeto `API` con todos los fetch del backend (playlists, búsqueda, album, perfil, top, favoritos).
+- **`favoritos.js`** — `obtenerFavoritos()` y `guardarFavorito()` (toggle) que sincronizan `estado.js` con Supabase.
+- **`reproductor.js`** — Cola de canciones, play/pausa, anterior/siguiente, **shuffle (aleatorio)**, **repeat (repetir lista/canción)**, volumen y barra de progreso. Exporta `reproducirPreview()`.
+- **`componentes.js`** — Creadores de tarjetas (`crearTarjetaCancion`, artista, álbum, playlist, top track) y `agregarSeccion()`. Las tarjetas de álbum reciben un callback para abrir la vista sin crear dependencias circulares.
+- **`navegacion.js`** — `mostrarVista()` y los clics del sidebar con **carga perezosa** (Biblioteca/Perfil piden datos solo la primera vez).
+- **`vistas/`** — Una vista por archivo, bajo `inicio.js`, `busqueda.js`, `album.js`, `biblioteca.js` y `perfil.js`.
+
+> **Comunicación entre módulos sin ciclos:** la vista de álbum usa el botón "Volver a resultados" emitiendo el evento `volver-a-resultados`, que la vista de búsqueda escucha con `window.addEventListener()`. Así `album.js` no importa `busqueda.js`.
 
 ### 5.2 Funciones principales del frontend
 
-| Función | Qué hace |
-|---|---|
-| `reproducirPreview()` | Agrega una canción a la cola y la reproduce (preview de 30 seg) |
-| `reproducirPorIndice()` | Reproduce una canción específica de la cola |
-| `ejecutarBusqueda()` | Guarda en historial, pide resultados a `/api/buscar` y los dibuja |
-| `cargarPlaylists()` | Carga las playlists del home |
-| `cargarCancionesRecientes()` | Pide canciones recientes a `/api/canciones` |
-| `cargarPerfilSpotify()` | Pide el perfil a `/api/perfil` y lo dibuja |
-| `cargarTopArtistas()` | Pide artistas a `/api/top-artistas` y los dibuja |
-| `cargarTopTracks()` | Pide tracks a `/api/top-tracks` y los dibuja |
-| `crearTarjetaCancion()` | Crea una tarjeta de canción reutilizable (play + corazón) |
-| `crearTarjetaArtista()` | Crea una tarjeta de artista (foto circular) |
-| `crearTarjetaAlbum()` | Crea una tarjeta de álbum (abre la vista de álbum) |
-| `crearTarjetaPlaylist()` | Crea una tarjeta de playlist |
-| `crearBotonFavorito()` | Crea el botón corazón de una tarjeta |
-| `cargarAlbum()` | Muestra la vista de un álbum con sus canciones |
-| `guardarFavorito()` | Agrega o quita una canción de favoritos (toggle corazón en Supabase) |
-| `cargarFavoritos()` | Trae y dibuja los favoritos en la Biblioteca |
-| `obtenerFavoritos()` | Sincroniza el estado global de corazones con Supabase |
+| Función | Módulo | Qué hace |
+|---|---|---|
+| `reproducirPreview()` | `reproductor.js` | Agrega una canción a la cola y la reproduce (preview de 30 seg) |
+| `reproducirPorIndice()` | `reproductor.js` | Reproduce una canción específica de la cola |
+| `ejecutarBusqueda()` | `vistas/busqueda.js` | Guarda en historial, pide resultados a `/api/buscar` y los dibuja |
+| `cargarPlaylists()` | `vistas/inicio.js` | Carga las playlists del home |
+| `cargarCancionesRecientes()` | `vistas/biblioteca.js` | Pide canciones recientes a `/api/canciones` |
+| `cargarPerfilSpotify()` | `vistas/perfil.js` | Pide el perfil a `/api/perfil` y lo dibuja |
+| `cargarTopArtistas()` | `vistas/perfil.js` | Pide artistas a `/api/top-artistas` y los dibuja |
+| `cargarTopTracks()` | `vistas/perfil.js` | Pide tracks a `/api/top-tracks` y los dibuja |
+| `crearTarjetaCancion()` | `componentes.js` | Crea una tarjeta de canción reutilizable (play + corazón) |
+| `crearTarjetaArtista()` | `componentes.js` | Crea una tarjeta de artista (foto circular) |
+| `crearTarjetaAlbum()` | `componentes.js` | Crea una tarjeta de álbum (abre la vista de álbum vía callback) |
+| `crearTarjetaPlaylist()` | `componentes.js` | Crea una tarjeta de playlist |
+| `crearBotonFavorito()` | `componentes.js` | Crea el botón corazón de una tarjeta |
+| `cargarAlbum()` | `vistas/album.js` | Muestra la vista de un álbum con sus canciones |
+| `guardarFavorito()` | `favoritos.js` | Agrega o quita una canción de favoritos (toggle corazón en Supabase) |
+| `cargarFavoritos()` | `vistas/biblioteca.js` | Trae y dibuja los favoritos en la Biblioteca |
+| `obtenerFavoritos()` | `favoritos.js` | Sincroniza el estado global de corazones con Supabase |
 
 ### 5.3 Estados de carga (Loading states)
 

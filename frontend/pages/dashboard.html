@@ -115,6 +115,9 @@
             <div class="controles-centrales">
                 <!-- Botones de control -->
                 <div class="botones-control">
+                    <button id="btn-aleatorio" title="Reproducción aleatoria">
+                        <i class="fa-solid fa-shuffle"></i>
+                    </button>
                     <button id="btn-anterior" title="Anterior">
                         <i class="fa-solid fa-backward-step"></i>
                     </button>
@@ -123,6 +126,9 @@
                     </button>
                     <button id="btn-siguiente" title="Siguiente">
                         <i class="fa-solid fa-forward-step"></i>
+                    </button>
+                    <button id="btn-repetir" title="Repetir desactivado">
+                        <i class="fa-solid fa-repeat"></i>
                     </button>
                 </div>
 
@@ -148,7 +154,7 @@
 
     </div>
 
-    <!-- Script que maneja vistas, playlists, búsqueda y saludo -->
-    <script src="../scripts/dashboard.js"></script>
+    <!-- Punto de entrada: módulos de sesión, navegación, reproductor, vistas -->
+    <script type="module" src="../scripts/main.js"></script>
 </body>
 </html>
