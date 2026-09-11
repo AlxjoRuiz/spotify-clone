@@ -1,11 +1,13 @@
 // ============================================================
-// VISTA INICIO — Playlists populares del home
+// VISTA INICIO — Playlists populares + secciones personalizadas
+// ("Hecho para ti"): recientes, artistas y canciones del usuario.
 // ============================================================
 
 import API from '../api.js';
-import { crearTarjetaPlaylist } from '../componentes.js';
+import { crearTarjetaPlaylist, crearTarjetaArtista, crearTarjetaCancion } from '../componentes.js';
 
 const contenedorPlaylists = document.querySelector('#playlists');
+let seccionesCargadas = false;
 
 // Accesos rápidos de la Home (patrón "Buenos días" de Spotify): ->
 // tiles con color de fondo que navegan a las otras vistas
@@ -40,8 +42,81 @@ function dibujarHero() {
     });
 }
 
+// Dibuja una sección personalizada debajo de "Para empezar"
+function agregarSeccionHome(titulo, items, funcionTarjeta, mensajeVacio) {
+    const vistaInicio = document.querySelector('#vista-inicio');
+
+    const tituloEl = document.createElement('h2');
+    tituloEl.classList.add('vista-titulo');
+    tituloEl.textContent = titulo;
+    vistaInicio.appendChild(tituloEl);
+
+    const grid = document.createElement('div');
+    grid.classList.add('grid-tarjetas');
+
+    const tarjetas = (items || [])
+        .filter(item => item && item.id)
+        .map(item => funcionTarjeta(item))
+        .filter(tarjeta => tarjeta);
+
+    if (tarjetas.length === 0) {
+        grid.innerHTML = `<p class="sin-resultados">${mensajeVacio}</p>`;
+    } else {
+        tarjetas.forEach(tarjeta => grid.appendChild(tarjeta));
+    }
+
+    vistaInicio.appendChild(grid);
+}
+
+// Carga una sola vez las secciones personalizadas del home:
+// recientes + artistas más escuchados + canciones más escuchadas.
+function cargarSeccionesHome() {
+    if (seccionesCargadas) return;
+    seccionesCargadas = true;
+
+    Promise.allSettled([
+        API.cancionesRecientes(),
+        API.topArtistas(),
+        API.topTracks()
+    ]).then(([recientes, artistas, tracks]) => {
+        if (recientes.status === 'fulfilled') {
+            agregarSeccionHome(
+                'Escuchado recientemente',
+                recientes.value?.items?.map(item => item?.track) ?? [],
+                crearTarjetaCancion,
+                'Todavía no tenés reproducciones recientes en Spotify.'
+            );
+        } else {
+            console.error('Error al cargar recientes en el home:', recientes.reason);
+        }
+
+        if (artistas.status === 'fulfilled') {
+            agregarSeccionHome(
+                'Tus artistas más escuchados',
+                artistas.value?.items ?? [],
+                crearTarjetaArtista,
+                'Todavía no tenés suficientes datos de escucha.'
+            );
+        } else {
+            console.error('Error al cargar top artistas en el home:', artistas.reason);
+        }
+
+        if (tracks.status === 'fulfilled') {
+            agregarSeccionHome(
+                'Tus canciones más escuchadas',
+                tracks.value?.items ?? [],
+                crearTarjetaCancion,
+                'Todavía no tenés suficientes datos de escucha.'
+            );
+        } else {
+            console.error('Error al cargar top tracks en el home:', tracks.reason);
+        }
+    });
+}
+
 export function cargarPlaylists() {
     dibujarHero();
+    cargarSeccionesHome();
 
     contenedorPlaylists.innerHTML = `
         <div class="perfil-loading">

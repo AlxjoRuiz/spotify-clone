@@ -38,7 +38,7 @@ spotify/
 │   │   ├── componentes.js               -> Tarjetas DOM reutilizables (canción, artista, álbum, playlist)
 │   │   ├── navegacion.js                -> Cambio de vistas + carga perezosa de Biblioteca/Perfil + router por eventos
 │   │   └── vistas/
-│   │       ├── inicio.js                -> Playlists populares del home
+│   │       ├── inicio.js                -> Home: hero, playlists y "Hecho para ti"
 │   │       ├── busqueda.js              -> Buscador + historial + sugerencias
 │   │       ├── explorar.js              -> Contenido inicial de Explorar (destacadas + lanzamientos)
 │   │       ├── album.js                 -> Vista de álbum (canciones + volver a resultados)
@@ -377,7 +377,7 @@ El frontend usa **ES Modules** (`<script type="module" src="../scripts/main.js">
 - **`reproductor.js`** — Cola de canciones, play/pausa, anterior/siguiente, **shuffle (aleatorio)**, **repeat (repetir lista/canción)**, volumen, barra de progreso y **corazón "me gusta"** (marca como favorita la canción que suena). Exporta `reproducirPreview()`.
 - **`componentes.js`** — Creadores de tarjetas (`crearTarjetaCancion`, artista, álbum, playlist, top track), `agregarSeccion()` y `crearListaTracks()` (lista de canciones compartida por álbumes y playlists). Las tarjetas de álbum y playlist reciben un callback para abrir el detalle sin crear dependencias circulares.
 - **`navegacion.js`** — `mostrarVista()`, los clics del sidebar, **historial de vistas** (flechas atrás/adelante del header) y un **router por eventos** (`mostrar-vista`) que cualquier módulo puede disparar para navegar sin importar navegación. Biblioteca/Perfil usan **carga perezosa**.
-- **`vistas/`** — Una vista por archivo: `inicio.js`, `busqueda.js`, `explorar.js`, `album.js`, `playlist.js`, `biblioteca.js` y `perfil.js`.
+- **`vistas/`** — Una vista por archivo: `inicio.js` (home con hero, playlists y "Hecho para ti"), `busqueda.js`, `explorar.js`, `album.js`, `playlist.js`, `biblioteca.js` y `perfil.js`.
 
 > **Comunicación entre módulos sin ciclos:** las vistas que necesitan navegar (explorar, playlist) disparan el evento `mostrar-vista` en `window`, que `navegacion.js` interpreta. La vista de álbum emite `volver-a-resultados` para volver a la búsqueda; si el álbum se abrió desde Explorar (sin búsqueda previa), `busqueda.js` emite `volver-a-explorar` para que Explorar recargue su contenido inicial. Así ningún módulo de vista importa a otro de forma circular.
 
@@ -388,7 +388,7 @@ El frontend usa **ES Modules** (`<script type="module" src="../scripts/main.js">
 | `reproducirPreview()` | `reproductor.js` | Agrega una canción a la cola y la reproduce (preview de 30 seg) |
 | `reproducirPorIndice()` | `reproductor.js` | Reproduce una canción específica de la cola |
 | `ejecutarBusqueda()` | `vistas/busqueda.js` | Guarda en historial, pide resultados a `/api/buscar` y los dibuja |
-| `cargarPlaylists()` | `vistas/inicio.js` | Carga las playlists del home |
+| `cargarPlaylists()` | `vistas/inicio.js` | Carga las playlists del home, el hero y las secciones personalizadas "Hecho para ti" |
 | `cargarExplorar()` | `vistas/explorar.js` | Carga el contenido inicial de Explorar (destacadas + lanzamientos), solo si la vista está vacía |
 | `cargarCancionesRecientes()` | `vistas/biblioteca.js` | Pide canciones recientes a `/api/canciones` |
 | `cargarMisPlaylists()` | `vistas/biblioteca.js` | Pide las playlists del usuario a `/api/mis-playlists` y las dibuja |
