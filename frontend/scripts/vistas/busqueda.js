@@ -21,7 +21,10 @@ const inputBuscar = document.querySelector('#input-buscar');
 const btnBuscar = document.querySelector('#btn-buscar');
 
 const HISTORIAL_MAX = 5;
+const BUSQUEDA_DEBOUNCE_MS = 400; // Espera mientras el usuario sigue escribiendo
 let ultimaBusqueda = '';
+let temporizadorBusqueda = null;
+let contadorBusquedas = 0; // Ignora respuestas viejas si el usuario ya buscó otra cosa
 
 // Obtiene el historial guardado en localStorage (o array vacío)
 function obtenerHistorial() {
@@ -64,11 +67,14 @@ function mostrarSugerencias() {
 
 // Pide los resultados de búsqueda a la API y los dibuja en la vista Explorar
 function ejecutarBusqueda() {
+    clearTimeout(temporizadorBusqueda);
+
     const texto = inputBuscar.value.trim();
     if (!texto) return;
 
     guardarEnHistorial(texto);
     ultimaBusqueda = texto;
+    const miBusqueda = ++contadorBusquedas;
 
     // Muestra la vista de explorar con un spinner
     mostrarVista('Explorar');
@@ -82,6 +88,9 @@ function ejecutarBusqueda() {
 
     API.buscar(texto)
         .then(data => {
+            // Si el usuario ya escribió otra cosa, esta respuesta quedó vieja
+            if (miBusqueda !== contadorBusquedas) return;
+
             vista.innerHTML = '';
 
             // Título con lo buscado
@@ -108,6 +117,8 @@ function ejecutarBusqueda() {
             }
         })
         .catch(error => {
+            if (miBusqueda !== contadorBusquedas) return;
+
             console.error('Error al buscar:', error);
             vista.innerHTML = `
                 <div class="loading-container">
@@ -136,6 +147,16 @@ btnBuscar.addEventListener('click', ejecutarBusqueda);
 
 inputBuscar.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') ejecutarBusqueda();
+});
+
+// Búsqueda en vivo: busca solo mientras escribís (con debounce para no
+// saturar la API) y evita repetir la búsqueda del texto ya mostrado
+inputBuscar.addEventListener('input', () => {
+    clearTimeout(temporizadorBusqueda);
+    temporizadorBusqueda = setTimeout(() => {
+        const texto = inputBuscar.value.trim();
+        if (texto && texto !== ultimaBusqueda) ejecutarBusqueda();
+    }, BUSQUEDA_DEBOUNCE_MS);
 });
 
 // Muestra las sugerencias cuando el campo recibe foco
