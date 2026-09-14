@@ -29,7 +29,8 @@ spotify/
 │   │   └── dashboard.html             -> Dashboard protegido (4 vistas)
 │   ├── scripts/
 │   │   ├── main.js                      -> Punto de entrada (ES modules): saludo + carga inicial
-│   │   ├── utils.js                     -> Helpers (formatearTiempo, escaparHTML, saludoSegunHora)
+│   │   ├── utils.js                     -> Helpers (formatearTiempo, escaparHTML, saludoSegunHora, duracionTotal, tiempoRelativo)
+│   │   ├── notificacion.js              -> Toasts no bloqueantes (reemplazan alert)
 │   │   ├── sesion.js                    -> Nombre de usuario, redirección y logout
 │   │   ├── estado.js                    -> Estado global de favoritos (corazones sincronizados)
 │   │   ├── api.js                       -> Cliente HTTP para todos los endpoints /api/*
@@ -39,7 +40,7 @@ spotify/
 │   │   ├── navegacion.js                -> Cambio de vistas + carga perezosa de Biblioteca/Perfil + router por eventos
 │   │   └── vistas/
 │   │       ├── inicio.js                -> Home: hero, playlists y "Hecho para ti"
-│   │       ├── busqueda.js              -> Buscador + historial + sugerencias
+│   │       ├── busqueda.js              -> Buscador en vivo (debounce) + historial + sugerencias
 │   │       ├── explorar.js              -> Contenido inicial de Explorar (destacadas + lanzamientos)
 │   │       ├── album.js                 -> Vista de álbum (canciones + volver a resultados)
 │   │       ├── playlist.js              -> Vista de playlist del usuario (canciones + volver a Biblioteca)
@@ -376,6 +377,7 @@ El frontend usa **ES Modules** (`<script type="module" src="../scripts/main.js">
 - **`estado.js`** — Estado global de favoritos (`favoritosIds`), consultable con `esFavorito()` y modificable solo vía `setFavoritosIds()` / `actualizarFavoritoLocal()`. `actualizarCorazones()` refresca los corazones de las tarjetas **y el corazón "me gusta" del reproductor**.
 - **`api.js`** — Un solo objeto `API` con todos los fetch del backend (playlists, búsqueda, album, perfil, top, favoritos).
 - **`favoritos.js`** — `obtenerFavoritos()` y `guardarFavorito()` (toggle) que sincronizan `estado.js` con Supabase.
+- **`notificacion.js`** — `mostrarToast(mensaje, tipo)` con toasts no bloqueantes (ok/error/info) que reemplazan a los `alert()`.
 - **`reproductor.js`** — Cola de canciones, play/pausa, anterior/siguiente, **shuffle (aleatorio)**, **repeat (repetir lista/canción)**, volumen, barra de progreso y **corazón "me gusta"** (marca como favorita la canción que suena). Exporta `reproducirPreview()`.
 - **`componentes.js`** — Creadores de tarjetas (`crearTarjetaCancion`, artista, álbum, playlist, top track), `agregarSeccion()` y `crearListaTracks()` (lista de canciones compartida por álbumes y playlists). Las tarjetas de álbum y playlist reciben un callback para abrir el detalle sin crear dependencias circulares.
 - **`navegacion.js`** — `mostrarVista()`, los clics del sidebar, **historial de vistas** (flechas atrás/adelante del header) y un **router por eventos** (`mostrar-vista`) que cualquier módulo puede disparar para navegar sin importar navegación. Biblioteca/Perfil usan **carga perezosa**.
@@ -389,7 +391,7 @@ El frontend usa **ES Modules** (`<script type="module" src="../scripts/main.js">
 |---|---|---|
 | `reproducirPreview()` | `reproductor.js` | Agrega una canción a la cola y la reproduce (preview de 30 seg) |
 | `reproducirPorIndice()` | `reproductor.js` | Reproduce una canción específica de la cola |
-| `ejecutarBusqueda()` | `vistas/busqueda.js` | Guarda en historial, pide resultados a `/api/buscar` y los dibuja |
+| `ejecutarBusqueda()` | `vistas/busqueda.js` | Guarda en historial, pide resultados a `/api/buscar` y los dibuja (ignora respuestas viejas si ya se buscó otra cosa) |
 | `cargarPlaylists()` | `vistas/inicio.js` | Carga las playlists del home, el hero y las secciones personalizadas "Hecho para ti" |
 | `cargarExplorar()` | `vistas/explorar.js` | Carga el contenido inicial de Explorar (destacadas + lanzamientos), solo si la vista está vacía |
 | `cargarCancionesRecientes()` | `vistas/biblioteca.js` | Pide canciones recientes a `/api/canciones` |
