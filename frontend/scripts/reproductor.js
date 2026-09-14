@@ -83,7 +83,8 @@ function reproducirPorIndice(indice) {
         ? '<i class="fa-solid fa-heart"></i>'
         : '<i class="fa-regular fa-heart"></i>';
 
-    actualizarIconoPlay(true);
+    // El icono se actualiza vía el listener audio 'play'
+    audio.play();
 }
 
 // Agrega una canción a la cola y la reproduce
@@ -124,9 +125,8 @@ function reproducirSiguiente() {
     // Llegó al final de la lista
     if (repetirActivo && colaCanciones.length > 0) {
         reproducirPorIndice(0);
-    } else {
-        actualizarIconoPlay(false);
     }
+    // Si no hay repeat, el evento 'ended' y 'pause' resetea el icono automáticamente
 }
 
 // Elige a qué canción ir cuando se pide "anterior"
@@ -161,10 +161,34 @@ btnPlay.addEventListener('click', () => {
 
     if (audio.paused) {
         audio.play();
-        actualizarIconoPlay(true);
     } else {
         audio.pause();
-        actualizarIconoPlay(false);
+    }
+});
+
+// Mantiene el icono play/pausa sincronizado con el estado real del audio
+// (cubre play por teclado, fin de preview, etc.)
+audio.addEventListener('play', () => actualizarIconoPlay(true));
+audio.addEventListener('pause', () => actualizarIconoPlay(false));
+
+// Atajo de teclado: Espacio pausa/reproduce (salvo que estés escribiendo)
+document.addEventListener('keydown', (e) => {
+    if (e.code !== 'Space') return;
+
+    const objetivo = e.target;
+    const esCampoTexto = objetivo instanceof HTMLElement && (
+        objetivo.tagName === 'INPUT' ||
+        objetivo.tagName === 'TEXTAREA' ||
+        objetivo.isContentEditable
+    );
+
+    if (esCampoTexto || colaCanciones.length === 0) return;
+
+    e.preventDefault();
+    if (audio.paused) {
+        audio.play();
+    } else {
+        audio.pause();
     }
 });
 

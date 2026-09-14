@@ -31,6 +31,10 @@ export function mostrarVista(textoLink) {
 
     const idVista = ID_VISTAS[textoLink];
     if (idVista) document.querySelector(`#${idVista}`).classList.add('activa');
+
+    // Cada vista arranca desde arriba (sin herencia de scroll de la anterior)
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) mainContent.scrollTop = 0;
 }
 
 // Carga perezosa: solo pide los datos que necesita cada vista
