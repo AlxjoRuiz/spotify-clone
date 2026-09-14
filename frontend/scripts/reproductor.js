@@ -6,6 +6,7 @@
 // ============================================================
 
 import { formatearTiempo, PORTADA_DEFECTO } from './utils.js';
+import { mostrarToast } from './notificacion.js';
 import { esFavorito } from './estado.js';
 import { guardarFavorito } from './favoritos.js';
 
@@ -66,7 +67,7 @@ function reproducirPorIndice(indice) {
 
     const cancion = colaCanciones[indice];
     if (!cancion.previewUrl) {
-        alert('Esta canción no tiene preview disponible');
+        mostrarToast('Esta canción no tiene preview disponible', 'error');
         return;
     }
 
@@ -90,7 +91,7 @@ function reproducirPorIndice(indice) {
 // Agrega una canción a la cola y la reproduce
 export function reproducirPreview(previewUrl, nombre, artista, portada, trackId) {
     if (!previewUrl) {
-        alert('Esta canción no tiene preview disponible');
+        mostrarToast('Esta canción no tiene preview disponible', 'error');
         return;
     }
 
