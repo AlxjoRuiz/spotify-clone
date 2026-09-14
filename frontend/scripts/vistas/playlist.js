@@ -5,7 +5,7 @@
 // ============================================================
 
 import API from '../api.js';
-import { escaparHTML, PORTADA_DEFECTO } from '../utils.js';
+import { escaparHTML, PORTADA_DEFECTO, formatearDuracionTotal } from '../utils.js';
 import { crearListaTracks } from '../componentes.js';
 
 // Pide mostrar una vista sin importar navegación.js (evita ciclos)
@@ -40,11 +40,14 @@ export function cargarPlaylistDetalle(playlistId) {
 
             const info = document.createElement('div');
             info.classList.add('album-info');
+            const duracionTotal = formatearDuracionTotal(
+                (data.tracks || []).reduce((acc, t) => acc + (t.duration_ms || 0), 0)
+            );
             info.innerHTML = `
                 <p class="album-label">Playlist</p>
                 <h2 class="album-nombre">${escaparHTML(data.playlist.nombre)}</h2>
                 <p class="album-artista">${escaparHTML(data.playlist.dueno)}</p>
-                <p class="album-meta">${escaparHTML(data.playlist.total_canciones)} canciones</p>
+                <p class="album-meta">${escaparHTML(data.playlist.total_canciones)} canciones · ${duracionTotal}</p>
             `;
             encabezado.appendChild(info);
             vista.appendChild(encabezado);

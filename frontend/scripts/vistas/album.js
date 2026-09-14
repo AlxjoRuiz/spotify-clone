@@ -5,7 +5,7 @@
 // ============================================================
 
 import API from '../api.js';
-import { escaparHTML, PORTADA_DEFECTO } from '../utils.js';
+import { escaparHTML, PORTADA_DEFECTO, formatearDuracionTotal } from '../utils.js';
 import { crearListaTracks } from '../componentes.js';
 import { mostrarVista } from '../navegacion.js';
 
@@ -36,11 +36,14 @@ export function cargarAlbum(albumId) {
 
             const info = document.createElement('div');
             info.classList.add('album-info');
+            const duracionTotal = formatearDuracionTotal(
+                (data.tracks || []).reduce((acc, t) => acc + (t.duration_ms || 0), 0)
+            );
             info.innerHTML = `
                 <p class="album-label">Álbum</p>
                 <h2 class="album-nombre">${escaparHTML(data.album.nombre)}</h2>
                 <p class="album-artista">${escaparHTML(data.album.artista)}</p>
-                <p class="album-meta">${escaparHTML(data.album.total_canciones)} canciones · ${escaparHTML(data.album.fecha)}</p>
+                <p class="album-meta">${escaparHTML(data.album.total_canciones)} canciones · ${escaparHTML(data.album.fecha)} · ${duracionTotal}</p>
             `;
             encabezado.appendChild(info);
             vista.appendChild(encabezado);

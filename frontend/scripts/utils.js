@@ -18,6 +18,39 @@ export function formatearTiempo(segundos) {
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
 }
 
+// Resume la duración total de una lista en "45 min" o "1 h 23 min"
+// (para el encabezado de álbumes y playlists)
+export function formatearDuracionTotal(milisegundos) {
+    const minutos = Math.round((milisegundos || 0) / 60000);
+    if (minutos < 60) return `${minutos} min`;
+
+    const horas = Math.floor(minutos / 60);
+    const resto = minutos % 60;
+    return resto === 0 ? `${horas} h` : `${horas} h ${resto} min`;
+}
+
+// Tiempo relativo en español: "ahora mismo", "hace 5 min", "hace 3 h", "hace 2 días"...
+export function tiempoRelativo(fechaISO) {
+    const diferencia = Date.now() - new Date(fechaISO).getTime();
+    if (Number.isNaN(diferencia) || diferencia < 0) return '';
+
+    const minutos = Math.floor(diferencia / 60000);
+    if (minutos < 1) return 'ahora mismo';
+    if (minutos < 60) return `hace ${minutos} min`;
+
+    const horas = Math.floor(minutos / 60);
+    if (horas < 24) return `hace ${horas} h`;
+
+    const dias = Math.floor(horas / 24);
+    if (dias < 30) return `hace ${dias} ${dias === 1 ? 'día' : 'días'}`;
+
+    const meses = Math.floor(dias / 30);
+    if (meses < 12) return `hace ${meses} ${meses === 1 ? 'mes' : 'meses'}`;
+
+    const anios = Math.floor(meses / 12);
+    return `hace ${anios} ${anios === 1 ? 'año' : 'años'}`;
+}
+
 // Escapa caracteres HTML para usar texto dinámico dentro de innerHTML (evita inyección)
 export function escaparHTML(valor) {
     return String(valor ?? '')

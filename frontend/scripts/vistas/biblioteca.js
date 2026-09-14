@@ -4,6 +4,7 @@
 // ============================================================
 
 import API from '../api.js';
+import { tiempoRelativo } from '../utils.js';
 import { crearTarjetaCancion, crearTarjetaPlaylist } from '../componentes.js';
 import { obtenerFavoritos } from '../favoritos.js';
 import { cargarPlaylistDetalle } from './playlist.js';
@@ -29,8 +30,21 @@ export function cargarCancionesRecientes() {
             }
 
             data.items.forEach(item => {
+                if (!item?.track) return;
+
                 const tarjeta = crearTarjetaCancion(item.track);
-                if (tarjeta) contenedor.appendChild(tarjeta);
+                if (!tarjeta) return;
+
+                // "Hace X" con la fecha de reproducción que manda Spotify
+                const hace = tiempoRelativo(item.played_at);
+                if (hace) {
+                    const linea = document.createElement('p');
+                    linea.classList.add('reciente-hace');
+                    linea.textContent = hace;
+                    tarjeta.appendChild(linea);
+                }
+
+                contenedor.appendChild(tarjeta);
             });
         })
         .catch(error => {
