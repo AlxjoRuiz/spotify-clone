@@ -3,9 +3,16 @@
 // Todos los fetch del frontend pasan por acá.
 // ============================================================
 
-// Hace un fetch y devuelve la respuesta parseada como JSON
+// Hace un fetch y devuelve la respuesta parseada como JSON.
+// Si la sesión expiró (401) redirige al login.
 async function pedir(url, opciones) {
     const response = await fetch(url, opciones);
+
+    if (response.status === 401) {
+        window.location.href = '/pages/login.html';
+        throw new Error('Sesión expirada');
+    }
+
     return response.json();
 }
 

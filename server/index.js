@@ -283,6 +283,13 @@ function validarTimeRange(valor) {
     return RANGOS_DE_TIEMPO.includes(valor) ? valor : 'medium_term';
 }
 
+// Toda ruta /api requiere sesión activa. Si expiró devolvemos 401 (JSON)
+// y el frontend redirige al login, en vez de un 500 críptico.
+app.use('/api', (req, res, next) => {
+    if (req.session.spotify_access_token) return next();
+    res.status(401).json({ error: 'No autorizado' });
+});
+
 // ------------------------------------------------------------------
 // RUTAS DE LA API (todas protegidas por sesión en el frontend)
 // ------------------------------------------------------------------
