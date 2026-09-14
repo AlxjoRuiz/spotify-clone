@@ -51,6 +51,8 @@ spotify/
 └── server/
     ├── index.js                       -> TODO el backend (Express, auth, API, Supabase)
     ├── package.json                   -> Dependencias
+    ├── supabase/migrations/           -> SQL para recrear la base en otro proyecto
+    │   └── 0001_esquema_inicial.sql   -> Tablas users/user_profiles/favoritos + RLS (idempotente)
     └── .env                           -> Variables secretas (NO se sube a git)
 ```
 
@@ -467,6 +469,19 @@ El CSS tiene 3 breakpoints:
 | `created_at` | timestamptz | Fecha en que se guardó |
 
 **Clave única `(user_profile_id, track_id)`:** un usuario no puede guardar dos veces la misma canción. RLS activado con políticas permisivas (la seguridad real la da el backend con la `SERVICE_ROLE_KEY`).
+
+### Recrear la base en otro proyecto (migración)
+
+Para que cualquiera que reciba el repo tenga la misma base de datos, existe una **migración SQL idempotente** en `server/supabase/migrations/0001_esquema_inicial.sql`. Pasos para un proyecto nuevo:
+
+1. Crear un proyecto en [Supabase](https://supabase.com) y copiar la `Service Role Key` y la `URL`.
+2. Aplicar la migración de cualquiera de estas formas:
+   - **Sin CLI:** Dashboard → SQL Editor → pegar el contenido del archivo → *Run*.
+   - **Con CLI:** `supabase link --project-ref tu-proyecto` y luego `supabase db push`.
+3. Crear `server/.env` copiando `.env.example` y completar `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` (además de las keys de Spotify).
+4. Listo: al primer login, el backend crea/actualiza solas las filas de `users`, `user_profiles` y `favoritos`.
+
+> La migración usa `CREATE TABLE IF NOT EXISTS` y agrega las claves únicas solo si faltan (por eso puede correrse varias veces sin romper nada). RLS queda habilitado sin políticas: el acceso real pasa por la `SERVICE_ROLE_KEY` del backend.
 
 ---
 
