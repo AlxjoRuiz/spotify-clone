@@ -81,7 +81,8 @@ export function crearTarjetaCancion(track) {
 }
 
 // Tarjeta de artista (imagen circular, abre Spotify al click)
-export function crearTarjetaArtista(artista) {
+// sublabel: texto debajo del nombre ("Artista", géneros, etc.)
+export function crearTarjetaArtista(artista, sublabel) {
     const portadaUrl = artista.images?.[0]?.url || PORTADA_DEFECTO;
 
     const tarjeta = document.createElement('div');
@@ -97,7 +98,7 @@ export function crearTarjetaArtista(artista) {
     tarjeta.appendChild(nombre);
 
     const tipo = document.createElement('p');
-    tipo.textContent = 'Artista';
+    tipo.textContent = sublabel || 'Artista';
     tarjeta.appendChild(tipo);
 
     if (artista.external_urls?.spotify) {

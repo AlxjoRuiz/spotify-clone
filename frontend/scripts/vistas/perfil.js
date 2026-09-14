@@ -4,8 +4,8 @@
 // ============================================================
 
 import API from '../api.js';
-import { escaparHTML, PORTADA_DEFECTO } from '../utils.js';
-import { crearTarjetaTopTrack } from '../componentes.js';
+import { escaparHTML } from '../utils.js';
+import { crearTarjetaTopTrack, crearTarjetaArtista } from '../componentes.js';
 import { nombreUsuario } from '../sesion.js';
 
 // Evita cargar varias veces si el usuario alterna de vista.
@@ -97,32 +97,9 @@ function cargarTopArtistas() {
             contenedor.innerHTML = '';
 
             data.items.forEach(artista => {
-                const portadaUrl = artista.images?.[0]?.url || PORTADA_DEFECTO;
-
-                const tarjeta = document.createElement('div');
-                tarjeta.classList.add('tarjeta-cancion', 'tarjeta-artista');
-                tarjeta.style.setProperty('--portada-url', `url(${portadaUrl})`);
-
-                const portada = document.createElement('img');
-                portada.src = portadaUrl;
-                portada.alt = artista.name;
-                tarjeta.appendChild(portada);
-
-                const nombre = document.createElement('p');
-                nombre.textContent = artista.name;
-                tarjeta.appendChild(nombre);
-
-                const generos = document.createElement('p');
-                generos.textContent = artista.genres?.slice(0, 2).join(', ') || 'Artista';
-                tarjeta.appendChild(generos);
-
-                if (artista.external_urls?.spotify) {
-                    tarjeta.addEventListener('click', () => {
-                        window.open(artista.external_urls.spotify, '_blank');
-                    });
-                }
-
-                contenedor.appendChild(tarjeta);
+                const subtitulo = artista.genres?.slice(0, 2).join(', ') || 'Artista';
+                const tarjeta = crearTarjetaArtista(artista, subtitulo);
+                if (tarjeta) contenedor.appendChild(tarjeta);
             });
         })
         .catch(error => {
