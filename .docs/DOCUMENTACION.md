@@ -18,37 +18,37 @@ Los tokens viven en dos lugares:
 
 ```
 spotify/
-├── frontend/
+├── frontend/                        -> App React+TS+Tailwind (build a frontend/dist)
 │   ├── assets/
 │   │   ├── images/
 │   │   │   └── spotify-logo.png       -> Logo para la pantalla de login
 │   │   └── video/
 │   │       └── video.mp4              -> Video de fondo del login
 │   ├── pages/
-│   │   ├── login.html                 -> Página de login (botón "Log in to Spotify")
-│   │   └── dashboard.html             -> Dashboard protegido (4 vistas)
+│   │   ├── login.html                 -> Entry login (misma URL, monta scripts/login.tsx)
+│   │   └── dashboard.html             -> Entry dashboard protegido (monta scripts/main.tsx)
 │   ├── scripts/
-│   │   ├── main.js                      -> Punto de entrada (ES modules): saludo + carga inicial
-│   │   ├── utils.js                     -> Helpers (formatearTiempo, escaparHTML, saludoSegunHora, duracionTotal, tiempoRelativo)
-│   │   ├── notificacion.js              -> Toasts no bloqueantes (reemplazan alert)
-│   │   ├── sesion.js                    -> Nombre de usuario, redirección y logout
-│   │   ├── estado.js                    -> Estado global de favoritos (corazones sincronizados)
-│   │   ├── api.js                       -> Cliente HTTP para todos los endpoints /api/*
-│   │   ├── favoritos.js                 -> CRUD de favoritos (sincroniza estado.js con Supabase)
-│   │   ├── reproductor.js               -> Reproductor: cola, play/pausa, shuffle, repeat, volumen
-│   │   ├── componentes.js               -> Tarjetas DOM reutilizables (canción, artista, álbum, playlist)
-│   │   ├── navegacion.js                -> Cambio de vistas + carga perezosa de Biblioteca/Perfil + router por eventos
+│   │   ├── main.tsx                     -> Punto de entrada: layout + Sidebar/Header + providers
+│   │   ├── login.tsx                    -> Página de login (botón /auth/spotify, ?error=)
+│   │   ├── tipos.ts                     -> Tipos Spotify/Supabase (antes implícitos)
+│   │   ├── utils.ts                     -> Helpers (formatearTiempo, duracionTotal, tiempoRelativo, saludo)
+│   │   ├── notificacion.tsx             -> Toasts no bloqueantes (reemplazan alert)
+│   │   ├── sesion.ts                    -> Nombre de usuario, redirección y logout
+│   │   ├── estado.tsx                   -> Favoritos global (reemplaza corazones + favoritos.js)
+│   │   ├── api.ts                       -> Cliente HTTP para todos los endpoints /api/*
+│   │   ├── reproductor.tsx              -> Reproductor: cola, play/pausa, shuffle, repeat, volumen
+│   │   ├── componentes.tsx              -> Tarjetas reutilizables + lista de tracks + spinners
+│   │   ├── navegacion.tsx               -> Vistas + historial atrás/adelante (reemplaza eventos)
 │   │   └── vistas/
-│   │       ├── inicio.js                -> Home: hero, playlists y "Hecho para ti"
-│   │       ├── busqueda.js              -> Buscador en vivo (debounce) + historial + sugerencias
-│   │       ├── explorar.js              -> Contenido inicial de Explorar (destacadas + lanzamientos)
-│   │       ├── album.js                 -> Vista de álbum (canciones + volver a resultados)
-│   │       ├── playlist.js              -> Vista de playlist del usuario (canciones + volver a Biblioteca)
-│   │       ├── biblioteca.js            -> Canciones recientes + favoritos + tus playlists
-│   │       └── perfil.js                -> Perfil, top artistas y top tracks
+│   │       ├── inicio.tsx               -> Home: hero, playlists y "Hecho para ti"
+│   │       ├── busqueda.tsx             -> Buscador en vivo (debounce) + historial + sugerencias
+│   │       ├── explorar.tsx             -> Explorar: inicial, resultados, (usa album/playlist)
+│   │       ├── album.tsx                -> Vista de álbum (canciones + volver a resultados)
+│   │       ├── playlist.tsx             -> Vista de playlist (canciones + volver a Biblioteca)
+│   │       ├── biblioteca.tsx           -> Canciones recientes + favoritos + tus playlists
+│   │       └── perfil.tsx               -> Perfil, top artistas y top tracks
 │   └── styles/
-│       ├── login.css                  -> Estilos del login (glassmorphism, video de fondo)
-│       └── dashboard.css              -> Estilos del dashboard (tema Spotify oscuro, responsive)
+│       └── index.css                  -> Entry Tailwind (+ keyframes/slider/scrollbar que Tailwind no cubre)
 └── server/
     ├── index.js                       -> TODO el backend (Express, auth, API, Supabase)
     ├── package.json                   -> Dependencias

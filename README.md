@@ -23,11 +23,19 @@ Clon de Spotify con **login usando tu cuenta de Spotify** (Authorization Code Fl
 ```bash
 cd server
 npm install
-cp .env.example .env   # y completalo (ver abajo)
-node index.js
+cp ../.env.example .env   # o server/.env.example, y completalo (ver abajo)
+node index.js             # backend en http://localhost:3000
+```
+
+```bash
+cd frontend
+npm install
+npm run build             # genera frontend/dist (lo sirve Express)
 ```
 
 Abrí `http://localhost:3000/pages/login.html`.
+
+Desarrollo del frontend (hot reload): `cd frontend && npm run dev` → `http://localhost:5173` (proxy `/api` y `/auth` a `:3000`).
 
 ## Variables de entorno (`server/.env`)
 
@@ -47,8 +55,8 @@ La migración idempotente `supabase/migrations/0001_esquema_inicial.sql` crea la
 ## Estructura
 
 ```
-frontend/        → pages, styles, scripts (ES modules por vista) y assets
-server/          → index.js (Express + auth + API) y lib/supabase.js (SDK)
+frontend/        → app React+TS+Tailwind (pages/*.html entries, scripts/*.tsx por vista, styles/index.css, assets) — build a frontend/dist
+server/          → index.js en JS (Express + auth + API, sirve frontend/dist) y lib/supabase.js (SDK)
 supabase/        → migrations (0001 esquema inicial: users, user_profiles, favoritos)
 .docs/           → DOCUMENTACION.md (detalle técnico de cada módulo y endpoint)
 ```
