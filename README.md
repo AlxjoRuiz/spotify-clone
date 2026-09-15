@@ -31,6 +31,9 @@ Abrí `http://localhost:3000/pages/login.html`.
 
 Desarrollo del frontend (hot reload): `npm run dev` → `http://localhost:5173` (proxy `/api` y `/auth` a `:3000`).
 
+> `npm start` corre el backend con `tsx` solo para resolver `lib/` en TS;
+> `index.js` sigue siendo JavaScript puro con `require()`.
+
 ## Variables de entorno (`.env` en la raíz)
 
 | Variable | Dónde se consigue |
@@ -53,7 +56,7 @@ pages/      → entries login.html + dashboard.html (mismas URLs)
 scripts/    → app React+TS+Tailwind (*.tsx por vista, api/utils/sesion/tipos)
 styles/     → index.css (Tailwind)
 assets/     → logo + video
-index.js    → backend Express en JS (sirve dist/) + lib/supabase.js (SDK)
+index.js    → backend Express en JS puro (sirve dist/) + lib/supabase.ts (SDK en TS)
 supabase/   → migrations (0001 esquema inicial: users, user_profiles, favoritos)
 .docs/      → DOCUMENTACION.md (detalle técnico de cada módulo y endpoint)
 ```

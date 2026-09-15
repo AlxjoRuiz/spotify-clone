@@ -49,7 +49,7 @@ spotify/
 ├── styles/
 │   └── index.css                      -> Entry Tailwind (+ keyframes/slider/scrollbar que Tailwind no cubre)
 ├── index.js                           -> TODO el backend en JS (Express, auth, API, sirve dist/)
-├── lib/supabase.js                    -> Cliente @supabase/supabase-js (mismas tablas de la migración)
+├── lib/supabase.ts                    -> Cliente @supabase/supabase-js en TS (mismas tablas de la migración)
 ├── .env                               -> Variables secretas (NO se sube a git)
 ├── supabase/migrations/               -> SQL para recrear la base en otro proyecto (estilo perfumes-web)
 │   └── 0001_esquema_inicial.sql       -> Tablas users/user_profiles/favoritos + RLS (idempotente)

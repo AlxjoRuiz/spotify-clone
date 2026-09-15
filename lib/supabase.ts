@@ -1,18 +1,19 @@
 // ------------------------------------------------------------------
-// Supabase — cliente oficial (@supabase/supabase-js), server en JS.
+// Supabase — cliente oficial (@supabase/supabase-js) en TypeScript.
 // Usa las MISMAS tablas de la migración 0001_esquema_inicial.sql:
 //   public.users, public.user_profiles, public.favoritos
-// No se toca el SQL. Solo se reemplaza el axios REST crudo por el SDK.
+// No se toca el SQL ni la lógica: mismos exports que usaba index.js.
 // ------------------------------------------------------------------
-
-// @ts-check
-const { createClient } = require('@supabase/supabase-js');
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-/** @type {import('@supabase/supabase-js').SupabaseClient | null} */
-let supabase = null;
+// Tablas del esquema 0001 (las únicas que toca el backend)
+export type SupabaseTable = 'users' | 'user_profiles' | 'favoritos';
+export type Filtros = Record<string, string | number>;
+
+let supabase: SupabaseClient | null = null;
 
 if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
     supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -24,13 +25,13 @@ if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
     );
 }
 
-/**
- * Inserta o actualiza (upsert) usando la constraint única.
- * @param {string} table - 'users' | 'user_profiles' | 'favoritos'
- * @param {Record<string, unknown>} payload
- * @param {string} [onConflict] - ej: 'spotify_id', 'user_id', 'user_profile_id,track_id'
- */
-async function upsertSupabaseTable(table, payload, onConflict) {
+// Inserta o actualiza (upsert) usando la constraint única.
+// onConflict: 'spotify_id' | 'user_id' | 'user_profile_id,track_id'
+export async function upsertSupabaseTable(
+    table: SupabaseTable,
+    payload: Record<string, unknown>,
+    onConflict?: string
+) {
     if (!supabase) return null;
     const { data, error } = await supabase
         .from(table)
@@ -40,15 +41,11 @@ async function upsertSupabaseTable(table, payload, onConflict) {
     return data;
 }
 
-/**
- * Lee filas con filtros de igualdad.
- * @param {string} table
- * @param {Record<string, string | number>} filtros - ej: { user_id: '...' }
- */
-async function leerSupabase(table, filtros) {
+// Lee filas con filtros de igualdad. Ej: leerSupabase('user_profiles', { user_id })
+export async function leerSupabase(table: SupabaseTable, filtros: Filtros = {}) {
     if (!supabase) return null;
     let query = supabase.from(table).select('*');
-    for (const [columna, valor] of Object.entries(filtros || {})) {
+    for (const [columna, valor] of Object.entries(filtros)) {
         query = query.eq(columna, valor);
     }
     const { data, error } = await query;
@@ -56,15 +53,11 @@ async function leerSupabase(table, filtros) {
     return data;
 }
 
-/**
- * Borra filas que cumplen los filtros.
- * @param {string} table
- * @param {Record<string, string | number>} filtros
- */
-async function borrarSupabase(table, filtros) {
+// Borra filas que cumplen los filtros. Devuelve true si no hubo error.
+export async function borrarSupabase(table: SupabaseTable, filtros: Filtros = {}) {
     if (!supabase) return false;
     let query = supabase.from(table).delete();
-    for (const [columna, valor] of Object.entries(filtros || {})) {
+    for (const [columna, valor] of Object.entries(filtros)) {
         query = query.eq(columna, valor);
     }
     const { error } = await query;
@@ -72,4 +65,4 @@ async function borrarSupabase(table, filtros) {
     return true;
 }
 
-module.exports = { supabase, upsertSupabaseTable, leerSupabase, borrarSupabase };
+export { supabase };
