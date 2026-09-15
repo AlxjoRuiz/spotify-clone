@@ -1,9 +1,14 @@
 import { useMemo } from 'react';
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import '../styles/index.css';
+import logoUrl from '../assets/images/spotify-logo.png';
+import videoUrl from '../assets/video/video.mp4';
 
-// Port de frontend/pages/login.html + styles/login.css a React + Tailwind.
-// Misma UI y comportamiento: video de fondo, logo con glow, botón /auth/spotify
-// y mensaje de error cuando el callback vuelve con ?error=.
-export function LoginPage() {
+// Login — reemplaza el <script> inline de pages/login.html (mismo archivo
+// HTML, misma UI y comportamiento: video, logo con glow, botón /auth/spotify
+// y error cuando el callback vuelve con ?error=).
+function LoginPage() {
     const tieneError = useMemo(
         () => new URLSearchParams(window.location.search).has('error'),
         []
@@ -11,14 +16,14 @@ export function LoginPage() {
 
     return (
         <div className="flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#121212] font-sans text-white">
-            <video autoPlay muted loop id="video-fondo" className="fixed left-0 top-0 -z-0 h-full w-full object-cover">
-                <source src="/assets/video/video.mp4" type="video/mp4" />
+            <video autoPlay muted loop id="video-fondo" className="fixed left-0 top-0 h-full w-full object-cover">
+                <source src={videoUrl} type="video/mp4" />
             </video>
 
             <div className="login relative z-10 flex min-w-[340px] flex-col items-center rounded-[26px] border border-white/[.18] p-2.5 backdrop-blur-xl saturate-[1.35]">
                 <img
                     id="logo"
-                    src="/assets/images/spotify-logo.png"
+                    src={logoUrl}
                     alt="logo"
                     className="mb-5 w-20 animate-[glow_1.5s_ease-in-out_infinite]"
                 />
@@ -42,3 +47,9 @@ export function LoginPage() {
         </div>
     );
 }
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+        <LoginPage />
+    </React.StrictMode>
+);

@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+/* Entry Tailwind (misma carpeta styles/). Reemplaza a styles/login.css.
+   En Fase 3 se suma aquí lo portado de styles/dashboard.css. */
+body {
+    background-color: #121212;
+    font-family: "Poppins", sans-serif;
+}
+
+/* Brillo del logo del login (era @keyframes glow en login.css) */
+@keyframes glow {
+    0%, 100% {
+        filter: drop-shadow(0 0 4px rgba(29, 185, 84, 0.6));
+    }
+    50% {
+        filter: drop-shadow(0 0 18px rgba(29, 185, 84, 1));
+    }
+}
