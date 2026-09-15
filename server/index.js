@@ -7,7 +7,8 @@ require('dotenv').config(); // Carga las variables del .env (credenciales, puert
 const path = require('path');
 const express = require('express');
 const session = require('express-session'); // Mantiene al usuario logueado y el token en memoria
-const axios = require('axios');             // Peticiones HTTP a Spotify y a la REST API de Supabase
+const axios = require('axios');             // Peticiones HTTP a Spotify
+const { upsertSupabaseTable, leerSupabase, borrarSupabase } = require('./lib/supabase'); // Supabase SDK (mismas tablas de la migración 0001)
 
 const app = express();
 
@@ -37,8 +38,6 @@ const PORT = process.env.PORT || 3000;
 const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 const SPOTIFY_REDIRECT_URI = process.env.SPOTIFY_REDIRECT_URI;
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 // playlist-read-private permite listar las playlists del usuario (Biblioteca)
 const SCOPE_SPOTIFY = 'user-read-private user-read-email user-read-recently-played user-top-read playlist-read-private';
@@ -46,62 +45,9 @@ const RANGOS_DE_TIEMPO = ['short_term', 'medium_term', 'long_term'];
 
 // ------------------------------------------------------------------
 // HELPERS DE SUPABASE
-// Pegan directo a la REST API de Supabase con la SERVICE_ROLE_KEY (acceso admin, salta RLS)
+// Cliente oficial @supabase/supabase-js (ver lib/supabase.js).
+// Tablas de la migración 0001_esquema_inicial.sql: users, user_profiles, favoritos.
 // ------------------------------------------------------------------
-
-// Inserta o actualiza una fila. onConflict indica la columna única para decidir si crea o actualiza.
-async function upsertSupabaseTable(table, payload, onConflict) {
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return null;
-
-    const url = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/${table}${onConflict ? `?on_conflict=${onConflict}` : ''}`;
-    const response = await axios.post(url, payload, {
-        headers: {
-            apikey: SUPABASE_SERVICE_ROLE_KEY,
-            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-            'Content-Type': 'application/json',
-            Prefer: 'resolution=merge-duplicates,return=representation'
-        }
-    });
-    return response.data;
-}
-
-// Lee filas filtrando por columna=valor. Ej: leerSupabase('user_profiles', { user_id: 5 })
-async function leerSupabase(table, filtros) {
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return null;
-
-    const query = new URLSearchParams();
-    for (const [columna, valor] of Object.entries(filtros)) {
-        query.append(columna, `eq.${valor}`);
-    }
-
-    const url = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/${table}?${query.toString()}`;
-    const response = await axios.get(url, {
-        headers: {
-            apikey: SUPABASE_SERVICE_ROLE_KEY,
-            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
-        }
-    });
-    return response.data;
-}
-
-// Borra filas que cumplen los filtros. Devuelve true si la URL era válida.
-async function borrarSupabase(table, filtros) {
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return false;
-
-    const query = new URLSearchParams();
-    for (const [columna, valor] of Object.entries(filtros)) {
-        query.append(columna, `eq.${valor}`);
-    }
-
-    const url = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/${table}?${query.toString()}`;
-    await axios.delete(url, {
-        headers: {
-            apikey: SUPABASE_SERVICE_ROLE_KEY,
-            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
-        }
-    });
-    return true;
-}
 
 // Jerry-rigged: la tabla `favoritos` referencia a `user_profiles.id`.
 // Este helper devuelve ese id (guardado en la sesión durante el login).
