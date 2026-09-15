@@ -16,7 +16,7 @@ const app = express();
 // CONFIGURACIÓN GLOBAL
 // ------------------------------------------------------------------
 app.use(express.json()); // Necesario para leer JSON en req.body (POST /api/favoritos)
-app.use(express.static(path.join(__dirname, '..', 'frontend', 'dist'))); // Sirve el build de Vite (cd frontend && npm run build)
+app.use(express.static(path.join(__dirname, 'dist'))); // Sirve el build de Vite (npm run build)
 
 // Sesiones firmadas y sin cookies para visitantes anónimos
 app.use(session({
@@ -156,7 +156,7 @@ function verificarLogin(req, res, next) {
 
 // Página del dashboard protegida (se sirve sola si hay sesión)
 app.get('/pages/dashboard.html', verificarLogin, (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'frontend', 'dist', 'pages', 'dashboard.html'));
+    res.sendFile(path.join(__dirname, 'dist', 'pages', 'dashboard.html'));
 });
 
 // ------------------------------------------------------------------

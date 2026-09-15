@@ -1,9 +1,11 @@
-// ESLint flat config — server en JS (CommonJS), sin TS.
-// Mantiene el backend simple: node index.js directo.
-const js = require('@eslint/js');
+// ESLint flat config único en raíz (estilo perfumes-web: eslint.config.mjs).
+// index.js (backend CommonJS) con reglas JS; scripts/**/*.ts(x) con tipos.
+import js from '@eslint/js';
+import tseslint from 'typescript-eslint';
 
-module.exports = [
+export default tseslint.config(
     js.configs.recommended,
+    ...tseslint.configs.recommended,
     {
         files: ['**/*.js'],
         languageOptions: {
@@ -22,9 +24,11 @@ module.exports = [
             'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
             'no-console': 'off',
             eqeqeq: ['error', 'always', { null: 'ignore' }],
+            // El backend es CommonJS a propósito (restricción del proyecto)
+            '@typescript-eslint/no-require-imports': 'off',
         },
     },
     {
-        ignores: ['node_modules/', 'dist/'],
-    },
-];
+        ignores: ['dist/', 'node_modules/'],
+    }
+);

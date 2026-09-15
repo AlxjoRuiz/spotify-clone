@@ -11,7 +11,7 @@ Migraciones SQL idempotentes (se pueden correr varias veces sin romper nada).
 | `favoritos` | `(user_profile_id, track_id)` | Canciones favoritas por usuario |
 
 RLS habilitado sin políticas: el acceso real pasa por la `SERVICE_ROLE_KEY`
-del backend (`server/lib/supabase.js`), que hace bypass de RLS.
+del backend (`lib/supabase.js`), que hace bypass de RLS.
 
 ## Aplicar la migración
 

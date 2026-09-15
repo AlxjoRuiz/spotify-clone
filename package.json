@@ -1,15 +1,21 @@
 {
-  "name": "spotify-clone-frontend",
+  "name": "spotify-clone",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
+  "description": "Clon de Spotify: login OAuth, dashboard React+TS+Tailwind, backend Express JS y Supabase",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
+    "start": "node index.js",
     "lint": "eslint ."
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "axios": "^1.18.1",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

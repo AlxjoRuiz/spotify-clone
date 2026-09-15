@@ -18,42 +18,39 @@ Los tokens viven en dos lugares:
 
 ```
 spotify/
-├── frontend/                        -> App React+TS+Tailwind (build a frontend/dist)
-│   ├── assets/
-│   │   ├── images/
-│   │   │   └── spotify-logo.png       -> Logo para la pantalla de login
-│   │   └── video/
-│   │       └── video.mp4              -> Video de fondo del login
-│   ├── pages/
-│   │   ├── login.html                 -> Entry login (misma URL, monta scripts/login.tsx)
-│   │   └── dashboard.html             -> Entry dashboard protegido (monta scripts/main.tsx)
-│   ├── scripts/
-│   │   ├── main.tsx                     -> Punto de entrada: layout + Sidebar/Header + providers
-│   │   ├── login.tsx                    -> Página de login (botón /auth/spotify, ?error=)
-│   │   ├── tipos.ts                     -> Tipos Spotify/Supabase (antes implícitos)
-│   │   ├── utils.ts                     -> Helpers (formatearTiempo, duracionTotal, tiempoRelativo, saludo)
-│   │   ├── notificacion.tsx             -> Toasts no bloqueantes (reemplazan alert)
-│   │   ├── sesion.ts                    -> Nombre de usuario, redirección y logout
-│   │   ├── estado.tsx                   -> Favoritos global (reemplaza corazones + favoritos.js)
-│   │   ├── api.ts                       -> Cliente HTTP para todos los endpoints /api/*
-│   │   ├── reproductor.tsx              -> Reproductor: cola, play/pausa, shuffle, repeat, volumen
-│   │   ├── componentes.tsx              -> Tarjetas reutilizables + lista de tracks + spinners
-│   │   ├── navegacion.tsx               -> Vistas + historial atrás/adelante (reemplaza eventos)
-│   │   └── vistas/
-│   │       ├── inicio.tsx               -> Home: hero, playlists y "Hecho para ti"
-│   │       ├── busqueda.tsx             -> Buscador en vivo (debounce) + historial + sugerencias
-│   │       ├── explorar.tsx             -> Explorar: inicial, resultados, (usa album/playlist)
-│   │       ├── album.tsx                -> Vista de álbum (canciones + volver a resultados)
-│   │       ├── playlist.tsx             -> Vista de playlist (canciones + volver a Biblioteca)
-│   │       ├── biblioteca.tsx           -> Canciones recientes + favoritos + tus playlists
-│   │       └── perfil.tsx               -> Perfil, top artistas y top tracks
-│   └── styles/
-│       └── index.css                  -> Entry Tailwind (+ keyframes/slider/scrollbar que Tailwind no cubre)
-└── server/
-    ├── index.js                       -> TODO el backend (Express, auth, API, Supabase)
-    ├── package.json                   -> Dependencias
-    ├── lib/supabase.js                -> Cliente @supabase/supabase-js (mismas tablas de la migración)
-    └── .env                           -> Variables secretas (NO se sube a git)
+├── assets/
+│   ├── images/
+│   │   └── spotify-logo.png           -> Logo para la pantalla de login
+│   └── video/
+│       └── video.mp4                  -> Video de fondo del login
+├── pages/
+│   ├── login.html                     -> Entry login (misma URL, monta scripts/login.tsx)
+│   └── dashboard.html                 -> Entry dashboard protegido (monta scripts/main.tsx)
+├── scripts/
+│   ├── main.tsx                         -> Punto de entrada: layout + Sidebar/Header + providers
+│   ├── login.tsx                        -> Página de login (botón /auth/spotify, ?error=)
+│   ├── tipos.ts                         -> Tipos Spotify/Supabase (antes implícitos)
+│   ├── utils.ts                         -> Helpers (formatearTiempo, duracionTotal, tiempoRelativo, saludo)
+│   ├── notificacion.tsx                 -> Toasts no bloqueantes (reemplazan alert)
+│   ├── sesion.ts                        -> Nombre de usuario, redirección y logout
+│   ├── estado.tsx                       -> Favoritos global (reemplaza corazones + favoritos.js)
+│   ├── api.ts                           -> Cliente HTTP para todos los endpoints /api/*
+│   ├── reproductor.tsx                  -> Reproductor: cola, play/pausa, shuffle, repeat, volumen
+│   ├── componentes.tsx                  -> Tarjetas reutilizables + lista de tracks + spinners
+│   ├── navegacion.tsx                   -> Vistas + historial atrás/adelante (reemplaza eventos)
+│   └── vistas/
+│       ├── inicio.tsx                   -> Home: hero, playlists y "Hecho para ti"
+│       ├── busqueda.tsx                 -> Buscador en vivo (debounce) + historial + sugerencias
+│       ├── explorar.tsx                 -> Explorar: inicial, resultados, (usa album/playlist)
+│       ├── album.tsx                    -> Vista de álbum (canciones + volver a resultados)
+│       ├── playlist.tsx                 -> Vista de playlist (canciones + volver a Biblioteca)
+│       ├── biblioteca.tsx               -> Canciones recientes + favoritos + tus playlists
+│       └── perfil.tsx                   -> Perfil, top artistas y top tracks
+├── styles/
+│   └── index.css                      -> Entry Tailwind (+ keyframes/slider/scrollbar que Tailwind no cubre)
+├── index.js                           -> TODO el backend en JS (Express, auth, API, sirve dist/)
+├── lib/supabase.js                    -> Cliente @supabase/supabase-js (mismas tablas de la migración)
+├── .env                               -> Variables secretas (NO se sube a git)
 ├── supabase/migrations/               -> SQL para recrear la base en otro proyecto (estilo perfumes-web)
 │   └── 0001_esquema_inicial.sql       -> Tablas users/user_profiles/favoritos + RLS (idempotente)
 └── .docs/DOCUMENTACION.md             -> Este archivo (detalle técnico)
@@ -63,7 +60,7 @@ spotify/
 
 ## 3. Variables de entorno (`.env`)
 
-El archivo `.env` está en `server/.env` y carga con `dotenv`.
+El archivo `.env` está en la raíz y carga con `dotenv`.
 
 | Variable | Para qué sirve |
 |---|---|
@@ -482,7 +479,7 @@ Para que cualquiera que reciba el repo tenga la misma base de datos, existe una 
 2. Aplicar la migración de cualquiera de estas formas:
    - **Sin CLI:** Dashboard → SQL Editor → pegar el contenido del archivo → *Run*.
    - **Con CLI:** `supabase link --project-ref tu-proyecto` y luego `supabase db push`.
-3. Crear `server/.env` copiando `.env.example` (raíz) o `server/.env.example` y completar `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` (además de las keys de Spotify).
+3. Crear `.env` en la raíz copiando `.env.example` y completar `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` (además de las keys de Spotify).
 4. Listo: al primer login, el backend crea/actualiza solas las filas de `users`, `user_profiles` y `favoritos`.
 
 > La migración usa `CREATE TABLE IF NOT EXISTS` y agrega las claves únicas solo si faltan (por eso puede correrse varias veces sin romper nada). RLS queda habilitado sin políticas: el acceso real pasa por la `SERVICE_ROLE_KEY` del backend.
@@ -543,9 +540,9 @@ El botón es un **toggle**: según su estado (clase `activo`) decide si agrega o
 ## 8. Cómo levantar el proyecto
 
 ```bash
-cd server
-npm install        # la primera vez
-node index.js
+npm install        # la primera vez (raíz: backend + frontend)
+npm run build      # frontend React -> dist/
+npm start          # backend en http://localhost:3000
 ```
 
 - Login: http://127.0.0.1:3000/pages/login.html

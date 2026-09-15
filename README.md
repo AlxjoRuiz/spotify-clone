@@ -21,23 +21,17 @@ Clon de Spotify con **login usando tu cuenta de Spotify** (Authorization Code Fl
 ## Instalación
 
 ```bash
-cd server
 npm install
-cp ../.env.example .env   # o server/.env.example, y completalo (ver abajo)
-node index.js             # backend en http://localhost:3000
-```
-
-```bash
-cd frontend
-npm install
-npm run build             # genera frontend/dist (lo sirve Express)
+cp .env.example .env   # completalo (ver abajo)
+npm run build          # frontend React -> dist/
+npm start              # backend en http://localhost:3000
 ```
 
 Abrí `http://localhost:3000/pages/login.html`.
 
-Desarrollo del frontend (hot reload): `cd frontend && npm run dev` → `http://localhost:5173` (proxy `/api` y `/auth` a `:3000`).
+Desarrollo del frontend (hot reload): `npm run dev` → `http://localhost:5173` (proxy `/api` y `/auth` a `:3000`).
 
-## Variables de entorno (`server/.env`)
+## Variables de entorno (`.env` en la raíz)
 
 | Variable | Dónde se consigue |
 |---|---|
@@ -55,10 +49,13 @@ La migración idempotente `supabase/migrations/0001_esquema_inicial.sql` crea la
 ## Estructura
 
 ```
-frontend/        → app React+TS+Tailwind (pages/*.html entries, scripts/*.tsx por vista, styles/index.css, assets) — build a frontend/dist
-server/          → index.js en JS (Express + auth + API, sirve frontend/dist) y lib/supabase.js (SDK)
-supabase/        → migrations (0001 esquema inicial: users, user_profiles, favoritos)
-.docs/           → DOCUMENTACION.md (detalle técnico de cada módulo y endpoint)
+pages/      → entries login.html + dashboard.html (mismas URLs)
+scripts/    → app React+TS+Tailwind (*.tsx por vista, api/utils/sesion/tipos)
+styles/     → index.css (Tailwind)
+assets/     → logo + video
+index.js    → backend Express en JS (sirve dist/) + lib/supabase.js (SDK)
+supabase/   → migrations (0001 esquema inicial: users, user_profiles, favoritos)
+.docs/      → DOCUMENTACION.md (detalle técnico de cada módulo y endpoint)
 ```
 
 > Organización adaptada de [perfumes-web](https://github.com/AlxjoRuiz/perfumes-web)
@@ -68,13 +65,13 @@ supabase/        → migrations (0001 esquema inicial: users, user_profiles, fav
 >
 > | perfumes-web | spotify-clone |
 > |---|---|
-> | `app/` (rutas) | `frontend/pages/` + `frontend/scripts/vistas/` |
-> | `components/{…}` | `frontend/scripts/componentes.tsx` + vistas |
-> | `lib/` | `frontend/scripts/{api,utils,sesion}.ts` |
-> | `types/` | `frontend/scripts/tipos.ts` |
-> | `public/` | `frontend/assets/` |
+> | `app/` (rutas) | `pages/` + `scripts/vistas/` |
+> | `components/{…}` | `scripts/componentes.tsx` + vistas |
+> | `lib/` | `scripts/{api,utils,sesion}.ts` y `lib/supabase.js` |
+> | `types/` | `scripts/tipos.ts` |
+> | `public/` | `assets/` |
 > | `supabase/` | `supabase/` (igual) |
-> | `pages/api` | `server/index.js` (Express) |
+> | `pages/api` | `index.js` (Express) |
 
 ## Deploy
 
