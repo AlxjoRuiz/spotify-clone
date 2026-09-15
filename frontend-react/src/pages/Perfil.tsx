@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { API } from '../lib/api';
-import type { Perfil } from '../lib/types';
+import type { Perfil } from '../types/spotify';
 
 export function PerfilPage() {
     const [perfil, setPerfil] = useState<Perfil | null>(null);

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { API } from '../lib/api';
-import type { FavoritoRow } from '../lib/types';
+import type { FavoritoRow } from '../types/spotify';
 
 export function Biblioteca() {
     const [favs, setFavs] = useState<FavoritoRow[]>([]);

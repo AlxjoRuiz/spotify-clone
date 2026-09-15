@@ -1,5 +1,5 @@
-import type { Track } from '../lib/types';
-import { usePlayer } from '../hooks/usePlayer';
+import type { Track } from '../../types/spotify';
+import { usePlayer } from '../../hooks/usePlayer';
 
 // Equivalente React+Tailwind de crearTarjetaCancion() en frontend/scripts/componentes.js
 export function TrackCard({ track }: { track: Track }) {

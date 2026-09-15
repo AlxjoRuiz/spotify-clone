@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { usePlayer } from '../hooks/usePlayer';
+import { usePlayer } from '../../hooks/usePlayer';
 
 // Barra inferior. Usa el preview_url de Spotify (30s) como el reproductor legacy.
 export function Player() {

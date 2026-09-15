@@ -1,6 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import { Sidebar } from './components/Sidebar';
-import { Player } from './components/Player';
+import { Sidebar } from './components/layout/Sidebar';
+import { Player } from './components/player/Player';
 import { Inicio } from './pages/Inicio';
 import { Explorar } from './pages/Explorar';
 import { Biblioteca } from './pages/Biblioteca';

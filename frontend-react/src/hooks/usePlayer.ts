@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Track } from '../lib/types';
+import type { Track } from '../types/spotify';
 
 interface PlayerState {
     cola: Track[];

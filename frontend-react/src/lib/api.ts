@@ -1,6 +1,6 @@
 // Cliente HTTP tipado para el backend Express (server/index.js en JS).
 // Mismos endpoints que usa frontend/scripts/api.js, pero con genéricos.
-import type { FavoritoRow, Perfil, PlaylistSimple, TimeRange, Track } from './types';
+import type { FavoritoRow, Perfil, PlaylistSimple, TimeRange } from '../types/spotify';
 
 async function pedir<T>(url: string, opciones?: RequestInit): Promise<T> {
     const response = await fetch(url, opciones);

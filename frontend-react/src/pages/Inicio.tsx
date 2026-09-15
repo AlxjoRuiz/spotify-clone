@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { API } from '../lib/api';
-import type { PlaylistSimple } from '../lib/types';
+import type { PlaylistSimple } from '../types/spotify';
 
 export function Inicio() {
     const [playlists, setPlaylists] = useState<PlaylistSimple[]>([]);
