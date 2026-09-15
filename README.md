@@ -2,7 +2,7 @@
 
 Clon de Spotify con **login usando tu cuenta de Spotify** (Authorization Code Flow), dashboard completo con reproductor, búsqueda en vivo, perfil dinámico, top de artistas/canciones, álbumes, playlists del usuario, favoritos y escuchado recientemente. Backend en Express, persistencia en Supabase.
 
-> Documentación técnica completa en [`DOCUMENTACION.md`](./DOCUMENTACION.md).
+> Documentación técnica completa en [`.docs/DOCUMENTACION.md`](./.docs/DOCUMENTACION.md).
 
 ## Funcionalidades
 
@@ -42,14 +42,17 @@ Abrí `http://localhost:3000/pages/login.html`.
 
 ## Base de datos
 
-La migración idempotente `server/supabase/migrations/0001_esquema_inicial.sql` crea las tablas `users`, `user_profiles` y `favoritos` (+ RLS). Aplicarla en Supabase → SQL Editor → pegar y **Run**. Se puede correr varias veces sin romper nada.
+La migración idempotente `supabase/migrations/0001_esquema_inicial.sql` crea las tablas `users`, `user_profiles` y `favoritos` (+ RLS). Aplicarla en Supabase → SQL Editor → pegar y **Run**. Se puede correr varias veces sin romper nada.
 
 ## Estructura
 
 ```
-frontend/   → pages, styles, scripts (ES modules por vista) y assets
-server/     → index.js (Express + auth + API + Supabase), supabase/migrations
-DOCUMENTACION.md → detalle técnico de cada módulo y endpoint
+frontend/        → legacy (pages, styles, scripts ES modules por vista) y assets
+frontend-react/  → app React+TS+Tailwind (components/ por dominio, lib/, types/, pages/)
+server/          → index.js (Express + auth + API) y lib/supabase.js (SDK)
+supabase/        → migrations (0001 esquema inicial: users, user_profiles, favoritos)
+types/           → (próximo) tipos compartidos estilo perfumes-web
+.docs/           → DOCUMENTACION.md (detalle técnico de cada módulo y endpoint)
 ```
 
 ## Deploy
