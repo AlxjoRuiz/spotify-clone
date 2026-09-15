@@ -11,12 +11,12 @@ node_modules/
 .env*
 !.env.example
 
-# Builds
-/build
-/dist
-/out/
-/.next/
-/coverage
+# Builds (en cualquier nivel: raiz, frontend/, server/)
+build/
+dist/
+out/
+.next/
+coverage/
 *.tsbuildinfo
 
 # Archivos del sistema
