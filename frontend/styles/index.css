@@ -1,10 +1,12 @@
 @import "tailwindcss";
 
-/* Entry Tailwind (misma carpeta styles/). Reemplaza a styles/login.css.
-   En Fase 3 se suma aquí lo portado de styles/dashboard.css. */
+/* Entry Tailwind (misma carpeta styles/). Reemplaza a styles/login.css
+   y styles/dashboard.css. */
 body {
+    margin: 0;
     background-color: #121212;
     font-family: "Poppins", sans-serif;
+    color: #ffffff;
 }
 
 /* Brillo del logo del login (era @keyframes glow en login.css) */
@@ -15,4 +17,66 @@ body {
     50% {
         filter: drop-shadow(0 0 18px rgba(29, 185, 84, 1));
     }
+}
+
+/* Barras de progreso/volumen (era #barra-progreso/#barra-volumen).
+   Tailwind no estiliza thumbs de range: van acá. */
+input[type="range"].slider {
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+input[type="range"].slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #ffffff;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+input[type="range"].slider:hover::-webkit-slider-thumb {
+    opacity: 1;
+}
+
+input[type="range"].slider::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border: none;
+    border-radius: 50%;
+    background: #ffffff;
+    opacity: 0;
+}
+
+input[type="range"].slider:hover::-moz-range-thumb {
+    opacity: 1;
+}
+
+/* Scrollbar fina y oscura del contenido (era .main-content::-webkit-scrollbar) */
+.scroll-spotify::-webkit-scrollbar {
+    width: 12px;
+}
+
+.scroll-spotify::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.scroll-spotify::-webkit-scrollbar-thumb {
+    background: #4d4d4d;
+    border-radius: 6px;
+    border: 3px solid #121212;
+}
+
+.scroll-spotify::-webkit-scrollbar-thumb:hover {
+    background: #6e6e6e;
+}
+
+/* Anillo visible al navegar con teclado (accesibilidad) */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+    outline: 2px solid #1db954;
+    outline-offset: 2px;
 }
