@@ -47,11 +47,9 @@ La migración idempotente `supabase/migrations/0001_esquema_inicial.sql` crea la
 ## Estructura
 
 ```
-frontend/        → legacy (pages, styles, scripts ES modules por vista) y assets
-frontend-react/  → app React+TS+Tailwind (components/ por dominio, lib/, types/, pages/)
+frontend/        → pages, styles, scripts (ES modules por vista) y assets
 server/          → index.js (Express + auth + API) y lib/supabase.js (SDK)
 supabase/        → migrations (0001 esquema inicial: users, user_profiles, favoritos)
-types/           → (próximo) tipos compartidos estilo perfumes-web
 .docs/           → DOCUMENTACION.md (detalle técnico de cada módulo y endpoint)
 ```
 

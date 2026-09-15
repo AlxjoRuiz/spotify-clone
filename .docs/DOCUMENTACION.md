@@ -56,7 +56,6 @@ spotify/
     └── .env                           -> Variables secretas (NO se sube a git)
 ├── supabase/migrations/               -> SQL para recrear la base en otro proyecto (estilo perfumes-web)
 │   └── 0001_esquema_inicial.sql       -> Tablas users/user_profiles/favoritos + RLS (idempotente)
-├── frontend-react/                    -> App React+TS+Tailwind (components/ por dominio, lib/, types/, pages/)
 └── .docs/DOCUMENTACION.md             -> Este archivo (detalle técnico)
 ```
 
