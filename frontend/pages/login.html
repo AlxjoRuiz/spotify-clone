@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SPOTIFY</title>
-    <link rel="stylesheet" href="../styles/login.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,27 +12,8 @@
 </head>
 
 <body>
-    <video autoplay muted loop id="video-fondo">
-        <source src="../assets/video/video.mp4" type="video/mp4">
-    </video>
-    <div class="login">
-        <img id="logo" src="../assets/images/spotify-logo.png" alt="logo">
-        <h1>¡BIENVENIDO A SPOTIFY!</h1>
-        <p>Millones de canciones gratis en Spotify.</p>
-
-        <p id="error-msg" class="error-msg" style="display:none;">Hubo un problema al iniciar sesión. Probá de nuevo.</p>
-
-        <a href="/auth/spotify" class="btn-spotify" id="btn-spotify">
-            <i class="fa-brands fa-spotify"></i> Iniciar sesión con Spotify
-        </a>
-    </div>
-
-    <script>
-        // Muestra el mensaje de error cuando Spotify rechaza (callback nos mandó con ?error=auth)
-        if (window.location.search.includes('error=')) {
-            document.getElementById('error-msg').style.display = 'block';
-        }
-    </script>
+    <div id="root"></div>
+    <script type="module" src="/src/login.tsx"></script>
 </body>
 
 </html>
