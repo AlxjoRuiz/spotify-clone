@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+/* Tema base Spotify (se amplía en Fase 2/3 al portar login.css/dashboard.css).
+   No se usa aún: las páginas legacy siguen con sus CSS actuales. */
+body {
+    background-color: #121212;
+}

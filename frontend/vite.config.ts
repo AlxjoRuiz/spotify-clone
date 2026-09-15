@@ -1,0 +1,29 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+
+// Migración in-place del frontend legacy:
+// - Vite root = frontend/ (sin proyecto nuevo).
+// - Entries = las mismas URLs que sirve el backend (/pages/login.html,
+//   /pages/dashboard.html) para no tocar OAuth, redirects ni verificarLogin.
+// - dist conserva la estructura pages/ por el mismo motivo.
+export default defineConfig({
+    plugins: [react(), tailwindcss()],
+    build: {
+        outDir: 'dist',
+        emptyOutDir: true,
+        rollupOptions: {
+            input: {
+                login: 'pages/login.html',
+                dashboard: 'pages/dashboard.html',
+            },
+        },
+    },
+    server: {
+        port: 5173,
+        proxy: {
+            '/api': 'http://127.0.0.1:3000',
+            '/auth': 'http://127.0.0.1:3000',
+        },
+    },
+});
