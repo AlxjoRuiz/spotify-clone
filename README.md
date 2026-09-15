@@ -61,6 +61,21 @@ supabase/        → migrations (0001 esquema inicial: users, user_profiles, fav
 .docs/           → DOCUMENTACION.md (detalle técnico de cada módulo y endpoint)
 ```
 
+> Organización adaptada de [perfumes-web](https://github.com/AlxjoRuiz/perfumes-web)
+> (raíz con `supabase/`, `.docs/`, `.env.example`, `.nvmrc`, `npm run lint` por
+> paquete). Las carpetas `app/`, `components/` y `pages/api` de esa referencia
+> son propias de Next.js y no aplican: este proyecto usa Express + Vite.
+>
+> | perfumes-web | spotify-clone |
+> |---|---|
+> | `app/` (rutas) | `frontend/pages/` + `frontend/scripts/vistas/` |
+> | `components/{…}` | `frontend/scripts/componentes.tsx` + vistas |
+> | `lib/` | `frontend/scripts/{api,utils,sesion}.ts` |
+> | `types/` | `frontend/scripts/tipos.ts` |
+> | `public/` | `frontend/assets/` |
+> | `supabase/` | `supabase/` (igual) |
+> | `pages/api` | `server/index.js` (Express) |
+
 ## Deploy
 
 Para una URL pública (Railway/Render/VPS): configurar las mismas variables de entorno en el hosting, registrar la Redirect URI de producción en el Spotify Dashboard (ej: `https://tu-app.up.railway.app/auth/spotify/callback`) y aplicar la migración en Supabase.

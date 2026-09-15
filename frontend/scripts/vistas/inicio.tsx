@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { API } from '../api';
 import { useNav } from '../navegacion';
-import { AlbumCard, ArtistCard, PlaylistCard, TrackCard } from '../componentes';
+import { ArtistCard, PlaylistCard, TrackCard } from '../componentes';
 import { GridTarjetas, SinResultados } from '../componentes';
 import { Spinner } from '../componentes';
 import type { Artist, PlaylistRef, Track } from '../tipos';

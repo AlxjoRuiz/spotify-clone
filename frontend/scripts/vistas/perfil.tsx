@@ -14,7 +14,7 @@ const RANGOS: { id: TimeRange; label: string }[] = [
 ];
 
 let cachePerfil: Perfil | null = null;
-let cacheTops: Partial<Record<TimeRange, { artistas: Artist[]; tracks: Track[] }>> = {};
+const cacheTops: Partial<Record<TimeRange, { artistas: Artist[]; tracks: Track[] }>> = {};
 
 export function Perfil() {
     const [perfil, setPerfil] = useState<Perfil | null>(cachePerfil);

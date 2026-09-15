@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 
 // Navegación — mismo archivo que navegacion.js, con la misma semántica:
@@ -37,7 +37,7 @@ export function NavProvider({ children }: { children: ReactNode }) {
     const [ultimaBusqueda, setUltimaBusqueda] = useState('');
     const [historialAtras, setHistorialAtras] = useState<Vista[]>([]);
     const [historialAdelante, setHistorialAdelante] = useState<Vista[]>([]);
-    const [contador, setContador] = useState(0);
+    const busquedaIdRef = useRef(0);
 
     const navegar = useCallback((v: Vista) => {
         setHistorialAtras((prev) => {
@@ -71,10 +71,8 @@ export function NavProvider({ children }: { children: ReactNode }) {
 
     const buscar = useCallback((texto: string) => {
         setUltimaBusqueda(texto);
-        setContador((c) => {
-            setExplorar({ kind: 'busqueda', texto, busquedaId: c + 1 });
-            return c + 1;
-        });
+        busquedaIdRef.current += 1;
+        setExplorar({ kind: 'busqueda', texto, busquedaId: busquedaIdRef.current });
         setHistorialAtras((prev) => {
             if (prev[prev.length - 1] === 'Explorar') return prev;
             return [...prev, 'Explorar'];
