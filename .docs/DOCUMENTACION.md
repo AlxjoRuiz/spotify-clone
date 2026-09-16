@@ -127,17 +127,17 @@ Activa las sesiones. El `secret` ahora se lee del `.env` con fallback por si fal
 
 ```js
 app.get('/pages/dashboard.html', verificarLogin, (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'frontend', 'pages', 'dashboard.html'));
+    res.sendFile(path.join(__dirname, 'dist', 'pages', 'dashboard.html'));
 });
 ```
 
 Ruta protegida: entrega `dashboard.html` solo si `verificarLogin` deja pasar.
 
 ```js
-app.use(express.static(path.join(__dirname, '..', 'frontend')));
+app.use(express.static(path.join(__dirname, 'dist')));
 ```
 
-Sirve todos los archivos del frontend (HTML, CSS, JS, imágenes) automáticamente.
+Sirve el build de Vite (`npm run build`): HTML compilado, JS/CSS con hash y assets. Las URLs (`/pages/*.html`, `/assets/*`) se conservan para no tocar OAuth ni redirects.
 
 ### 4.3 Credenciales
 
@@ -153,7 +153,9 @@ Guarda las credenciales en constantes, leídas del `.env`.
 
 ### 4.4 Helpers de Supabase
 
-Tres funciones que pegan directo a la **REST API de Supabase** usando la `SERVICE_ROLE_KEY` (acceso admin, saltea RLS).
+Tres funciones tipadas en `lib/supabase.ts` sobre el cliente oficial
+`@supabase/supabase-js` con la `SERVICE_ROLE_KEY` (acceso admin, saltea RLS).
+Mismas tablas de la migración 0001 y mismos exports que usaba `index.js`.
 
 #### `upsertSupabaseTable` — insertar o actualizar
 
@@ -368,47 +370,44 @@ app.listen(PORT, () => {
 
 ### 5.1 Estructura de módulos del frontend
 
-El frontend usa **ES Modules** (`<script type="module" src="../scripts/main.js">`). Cada responsabilidad vive en su propio archivo y se importa/exporta explícitamente, eliminando el monolito de `dashboard.js`:
+El frontend es **React + TypeScript + Tailwind** (build con Vite, entries
+`pages/login.html` y `pages/dashboard.html`). Cada responsabilidad vive en su
+propio archivo bajo `scripts/` (misma carpeta y nombres que el JS original,
+solo cambia la extensión):
 
-- **`main.js`** — Punto de entrada: pinta el saludo dinámico, carga playlists del home, el estado de favoritos y la **foto de perfil en el header** (reemplaza el icono genérico `fa-user` por la imagen del usuario si tiene).
-- **`utils.js`** — Helpers puros: `formatearTiempo()`, `escaparHTML()` (anti-XSS), `saludoSegunHora()`.
-- **`sesion.js`** — Lee el nombre de la URL/localStorage, redirige a `login.html` si no hay sesión y configura el logout.
-- **`estado.js`** — Estado global de favoritos (`favoritosIds`), consultable con `esFavorito()` y modificable solo vía `setFavoritosIds()` / `actualizarFavoritoLocal()`. `actualizarCorazones()` refresca los corazones de las tarjetas **y el corazón "me gusta" del reproductor**.
-- **`api.js`** — Un solo objeto `API` con todos los fetch del backend (playlists, búsqueda, album, perfil, top, favoritos).
-- **`favoritos.js`** — `obtenerFavoritos()` y `guardarFavorito()` (toggle) que sincronizan `estado.js` con Supabase.
-- **`notificacion.js`** — `mostrarToast(mensaje, tipo)` con toasts no bloqueantes (ok/error/info) que reemplazan a los `alert()`.
-- **`reproductor.js`** — Cola de canciones, play/pausa, anterior/siguiente, **shuffle (aleatorio)**, **repeat (repetir lista/canción)**, volumen, barra de progreso y **corazón "me gusta"** (marca como favorita la canción que suena). Exporta `reproducirPreview()`.
-- **`componentes.js`** — Creadores de tarjetas (`crearTarjetaCancion`, artista, álbum, playlist, top track), `agregarSeccion()` y `crearListaTracks()` (lista de canciones compartida por álbumes y playlists). Las tarjetas de álbum y playlist reciben un callback para abrir el detalle sin crear dependencias circulares.
-- **`navegacion.js`** — `mostrarVista()`, los clics del sidebar, **historial de vistas** (flechas atrás/adelante del header) y un **router por eventos** (`mostrar-vista`) que cualquier módulo puede disparar para navegar sin importar navegación. Biblioteca/Perfil usan **carga perezosa**.
-- **`vistas/`** — Una vista por archivo: `inicio.js` (home con hero, playlists y "Hecho para ti"), `busqueda.js`, `explorar.js`, `album.js`, `playlist.js`, `biblioteca.js` y `perfil.js`.
+- **`main.tsx`** — Punto de entrada: providers + layout (Sidebar/Header/Reproductor) + vista activa. Monta el saludo, el avatar del header (reemplaza `fa-user` por la foto si hay) y arranca en Inicio.
+- **`login.tsx`** — Página de login (botón `/auth/spotify`, error con `?error=`).
+- **`tipos.ts`** — Tipos Spotify/Supabase (`Track`, `Artist`, `Perfil`, `FavoritoRow`…); antes eran contratos implícitos.
+- **`utils.ts`** — Helpers puros: `formatearTiempo()`, `formatearDuracionTotal()`, `tiempoRelativo()`, `saludoSegunHora()`. (`escaparHTML()` no existe más: React escapa por defecto.)
+- **`sesion.ts`** — Nombre desde `?nombre=`/localStorage, redirect a `login.html` sin sesión y `cerrarSesion()`.
+- **`estado.tsx`** — `FavoritosProvider` + `useFavoritos()`: ids, lista y `toggle()`/`recargar()` contra Supabase. Absorbe a `favoritos.js`; el re-render reemplaza a `actualizarCorazones()`.
+- **`api.ts`** — Mismo objeto `API` con todos los fetch al backend (mismos endpoints).
+- **`notificacion.tsx`** — `ToastProvider` + `useToast(mensaje, tipo)` (ok/error/info, 3s, arriba a la derecha).
+- **`reproductor.tsx`** — `PlayerProvider` + `usePlayer()` + componente `Reproductor`: cola, play/pausa, anterior/siguiente, **shuffle**, **repeat (lista/una)**, volumen, mute, progreso, seek, atajo `Espacio` y **corazón "me gusta"**. `reproducirPreview()` / `reproducirTrack()`.
+- **`componentes.tsx`** — `TrackCard` (play + corazón + línea extra + variante top), `ArtistCard` (circular), `AlbumCard`, `PlaylistCard` (detalle o Spotify externo), `TrackList` (filas de álbum/playlist), `Seccion`/`GridTarjetas`/`SinResultados`/`Spinner`/`ErrorCarga`.
+- **`navegacion.tsx`** — `NavProvider` + `useNav()`: vista activa, **historial atrás/adelante**, estado `Explorar` multifunción (inicial/búsqueda/álbum/playlist) y `volverAResultados()`. Reemplaza al router por eventos de `window`.
+- **`vistas/`** — Un componente por archivo: `inicio.tsx` (hero + "Hecho para ti", cache de módulo), `busqueda.tsx` (`useBuscador`: debounce 400ms + historial + sugerencias), `explorar.tsx`, `album.tsx`, `playlist.tsx`, `biblioteca.tsx` (recientes + favs + playlists, recarga por visita) y `perfil.tsx` (perfil + tabs de rango con cache por rango).
 
-> **Comunicación entre módulos sin ciclos:** las vistas que necesitan navegar (explorar, playlist) disparan el evento `mostrar-vista` en `window`, que `navegacion.js` interpreta. La vista de álbum emite `volver-a-resultados` para volver a la búsqueda; si el álbum se abrió desde Explorar (sin búsqueda previa), `busqueda.js` emite `volver-a-explorar` para que Explorar recargue su contenido inicial. Así ningún módulo de vista importa a otro de forma circular.
+> **Comunicación sin ciclos:** donde había eventos en `window` (`mostrar-vista`, `volver-a-resultados`, `volver-a-explorar`) ahora hay funciones del contexto de navegación (`navegar()`, `buscar()`, `abrirAlbum()`, `abrirPlaylist()`, `volverAResultados()`). Las vistas no se importan entre sí.
 
 ### 5.2 Funciones principales del frontend
 
-| Función | Módulo | Qué hace |
+| Función / hook | Módulo | Qué hace |
 |---|---|---|
-| `reproducirPreview()` | `reproductor.js` | Agrega una canción a la cola y la reproduce (preview de 30 seg) |
-| `reproducirPorIndice()` | `reproductor.js` | Reproduce una canción específica de la cola |
-| `ejecutarBusqueda()` | `vistas/busqueda.js` | Guarda en historial, pide resultados a `/api/buscar` y los dibuja (ignora respuestas viejas si ya se buscó otra cosa) |
-| `cargarPlaylists()` | `vistas/inicio.js` | Carga las playlists del home, el hero y las secciones personalizadas "Hecho para ti" |
-| `cargarExplorar()` | `vistas/explorar.js` | Carga el contenido inicial de Explorar (destacadas + lanzamientos), solo si la vista está vacía |
-| `cargarCancionesRecientes()` | `vistas/biblioteca.js` | Pide canciones recientes a `/api/canciones` |
-| `cargarMisPlaylists()` | `vistas/biblioteca.js` | Pide las playlists del usuario a `/api/mis-playlists` y las dibuja |
-| `cargarPlaylistDetalle()` | `vistas/playlist.js` | Muestra una playlist del usuario con sus canciones |
-| `cargarPerfilSpotify()` | `vistas/perfil.js` | Pide el perfil a `/api/perfil` y lo dibuja |
-| `cargarTopArtistas()` | `vistas/perfil.js` | Pide artistas a `/api/top-artistas` y los dibuja (respeta el rango elegido en los tabs) |
-| `cargarTopTracks()` | `vistas/perfil.js` | Pide tracks a `/api/top-tracks` y los dibuja (respeta el rango de los tabs) |
-| `crearTarjetaCancion()` | `componentes.js` | Crea una tarjeta de canción reutilizable (play + corazón) |
-| `crearTarjetaArtista()` | `componentes.js` | Crea una tarjeta de artista (foto circular) |
-| `crearTarjetaAlbum()` | `componentes.js` | Crea una tarjeta de álbum (abre la vista de álbum vía callback) |
-| `crearTarjetaPlaylist()` | `componentes.js` | Crea una tarjeta de playlist (callback opcional para abrir el detalle) |
-| `crearListaTracks()` | `componentes.js` | Lista de canciones con play (compartida por álbumes y playlists) |
-| `crearBotonFavorito()` | `componentes.js` | Crea el botón corazón de una tarjeta |
-| `cargarAlbum()` | `vistas/album.js` | Muestra la vista de un álbum con sus canciones |
-| `guardarFavorito()` | `favoritos.js` | Agrega o quita una canción de favoritos (toggle corazón en Supabase) |
-| `cargarFavoritos()` | `vistas/biblioteca.js` | Trae y dibuja los favoritos en la Biblioteca |
-| `obtenerFavoritos()` | `favoritos.js` | Sincroniza el estado global de corazones con Supabase |
+| `reproducirPreview()` / `reproducirTrack()` | `reproductor.tsx` | Agrega una canción a la cola y la reproduce (preview de 30 seg) |
+| `useBuscador()` | `vistas/busqueda.tsx` | Historial, debounce, sugerencias y `buscar()` (ignora respuestas viejas) |
+| `Inicio` (+ cache de módulo) | `vistas/inicio.tsx` | Hero, playlists y secciones "Hecho para ti" (carga una vez) |
+| `Explorar` (+ `nonce`) | `vistas/explorar.tsx` | Inicial (destacadas + lanzamientos), resultados o detalle álbum/playlist |
+| `Recientes` / `Favoritos` / `MisPlaylists` | `vistas/biblioteca.tsx` | Recientes con "hace X", favs del estado global, playlists (recarga por visita) |
+| `DetallePlaylist` | `vistas/playlist.tsx` | Playlist con canciones + volver a Biblioteca |
+| `Perfil` (+ cache por rango) | `vistas/perfil.tsx` | Perfil, tabs de rango y tops (respeta el rango elegido) |
+| `TrackCard` / `ArtistCard` | `componentes.tsx` | Tarjeta canción (play + corazón) / artista (foto circular) |
+| `AlbumCard` / `PlaylistCard` | `componentes.tsx` | Abren el detalle vía navegación (o Spotify externo en el home) |
+| `TrackList` | `componentes.tsx` | Filas con play (compartida por álbumes y playlists) |
+| `DetalleAlbum` | `vistas/album.tsx` | Álbum con canciones + volver a resultados |
+| `toggle()` / `recargar()` | `estado.tsx` | Toggle corazón en Supabase y recarga de favoritos |
+| `mostrarToast()` | `notificacion.tsx` | Toast ok/error/info de 3s |
+| `navegar()` / `buscar()` / `volverAResultados()` | `navegacion.tsx` | Cambio de vista, búsqueda y retorno con historial |
 
 ### 5.3 Estados de carga (Loading states)
 
@@ -523,10 +522,10 @@ Click en corazón (tarjeta de canción)
        └── lleno ──► DELETE /api/favoritos/:trackId
                            └── borra fila en Supabase → corazón se vacía
 
-Entrar a Biblioteca → cargarFavoritos() → GET /api/favoritos → dibuja lista
+Entrar a Biblioteca → `recargar()` → GET /api/favoritos → la lista se re-renderiza
 ```
 
-El botón es un **toggle**: según su estado (clase `activo`) decide si agrega o borra.
+El botón es un **toggle**: según si el id está en el estado global decide si agrega o borra; al quitar desde Biblioteca la tarjeta desaparece sola (se filtra de la lista).
 
 ## 7.2 Historial de búsquedas
 
