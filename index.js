@@ -432,6 +432,39 @@ app.get('/api/album/:id/tracks', async (req, res) => {
 });
 
 // ------------------------------------------------------------------
+// ARTISTA (perfil + top tracks + álbumes para la vista de artista)
+// ------------------------------------------------------------------
+
+// Detalle de un artista en una sola respuesta (3 llamadas en paralelo)
+app.get('/api/artistas/:id', async (req, res) => {
+    try {
+        const [artista, top, albums] = await Promise.all([
+            pedirASpotify(`https://api.spotify.com/v1/artists/${req.params.id}`, req),
+            pedirASpotify(`https://api.spotify.com/v1/artists/${req.params.id}/top-tracks?market=CO`, req),
+            pedirASpotify(`https://api.spotify.com/v1/artists/${req.params.id}/albums?limit=10&market=CO`, req)
+        ]);
+
+        res.json({
+            artista: {
+                id: artista.id,
+                nombre: artista.name,
+                imagen: artista.images?.[0]?.url ?? null,
+                generos: artista.genres ?? [],
+                seguidores: artista.followers?.total ?? 0,
+                popularidad: artista.popularity ?? 0,
+                spotify_url: artista.external_urls?.spotify ?? null
+            },
+            top: top.tracks ?? [],
+            albums: albums.items ?? []
+        });
+
+    } catch (error) {
+        console.error(error.response?.data || error.message);
+        res.status(500).json({ error: 'No se pudo obtener el artista' });
+    }
+});
+
+// ------------------------------------------------------------------
 // CANCIONES FAVORITAS (persistidas en Supabase, tabla `favoritos`)
 // ------------------------------------------------------------------
 

@@ -4,6 +4,7 @@ import { useNav } from '../navegacion';
 import { AlbumCard, ArtistCard, ErrorCarga, GridTarjetas, PlaylistCard, Seccion, SinResultados, Spinner, TrackCard } from '../componentes';
 import { DetalleAlbum } from './album';
 import { DetallePlaylist } from './playlist';
+import { DetalleArtista } from './artista';
 import type { Artist, PlaylistRef } from '../tipos';
 
 // Vista Explorar — mismo archivo que vistas/explorar.js: contenido inicial
@@ -14,6 +15,7 @@ export function Explorar() {
 
     if (explorar.kind === 'album') return <DetalleAlbum id={explorar.id} />;
     if (explorar.kind === 'playlist') return <DetallePlaylist id={explorar.id} />;
+    if (explorar.kind === 'artista') return <DetalleArtista id={explorar.id} desde={explorar.desde} />;
     if (explorar.kind === 'busqueda') return <ResultadosBusqueda texto={explorar.texto} busquedaId={explorar.busquedaId} />;
     return <ExplorarInicial nonce={explorar.nonce} />;
 }

@@ -43,6 +43,7 @@ spotify/
 │       ├── busqueda.tsx                 -> Buscador en vivo (debounce) + historial + sugerencias
 │       ├── explorar.tsx                 -> Explorar: inicial, resultados, (usa album/playlist)
 │       ├── album.tsx                    -> Vista de álbum (canciones + volver a resultados)
+│       ├── artista.tsx                  -> Detalle de artista (top + álbumes + volver)
 │       ├── playlist.tsx                 -> Vista de playlist (canciones + volver a Biblioteca)
 │       ├── biblioteca.tsx               -> Canciones recientes + favoritos + tus playlists
 │       └── perfil.tsx                   -> Perfil, top artistas y top tracks
@@ -210,6 +211,7 @@ Este helper lo usan todas las rutas de la API (`/api/canciones`, `/api/perfil`, 
 | `/api/playlists/:id/tracks` | GET | Datos de la playlist + sus canciones (usado por la vista de playlist) |
 | `/api/buscar` | GET | Resultados de búsqueda (`?q=texto`) — tracks, artistas, álbumes, playlists |
 | `/api/album/:id/tracks` | GET | Canciones de un álbum específico (usado por la vista de álbum) |
+| `/api/artistas/:id` | GET | Artista + top tracks + álbumes (usado por la vista de artista) |
 | `/api/favoritos` | GET | Todos los favoritos del usuario logueado |
 | `/api/favoritos` | POST | Agrega una canción favorita (body: trackId, nombre, artista, imagen, preview) |
 | `/api/favoritos/:trackId` | DELETE | Borra una canción de favoritos del usuario |
@@ -383,10 +385,10 @@ solo cambia la extensión):
 - **`estado.tsx`** — `FavoritosProvider` + `useFavoritos()`: ids, lista y `toggle()`/`recargar()` contra Supabase. Absorbe a `favoritos.js`; el re-render reemplaza a `actualizarCorazones()`.
 - **`api.ts`** — Mismo objeto `API` con todos los fetch al backend (mismos endpoints).
 - **`notificacion.tsx`** — `ToastProvider` + `useToast(mensaje, tipo)` (ok/error/info, 3s, arriba a la derecha).
-- **`reproductor.tsx`** — `PlayerProvider` + `usePlayer()` + componente `Reproductor`: cola, play/pausa, anterior/siguiente, **shuffle**, **repeat (lista/una)**, volumen, mute, progreso, seek, atajo `Espacio` y **corazón "me gusta"**. `reproducirPreview()` / `reproducirTrack()`.
+- **`reproductor.tsx`** — `PlayerProvider` + `usePlayer()` + componente `Reproductor`: cola, play/pausa, anterior/siguiente, **shuffle**, **repeat (lista/una)**, volumen, mute, progreso, seek, atajo `Espacio` y **corazón "me gusta"**. `reproducirPreview()` / `reproducirTrack()`. Componente `ColaDrawer` (drawer fijo con sonando/siguientes) y `reproducirCola()`.
 - **`componentes.tsx`** — `TrackCard` (play + corazón + línea extra + variante top), `ArtistCard` (circular), `AlbumCard`, `PlaylistCard` (detalle o Spotify externo), `TrackList` (filas de álbum/playlist), `Seccion`/`GridTarjetas`/`SinResultados`/`Spinner`/`ErrorCarga`.
 - **`navegacion.tsx`** — `NavProvider` + `useNav()`: vista activa, **historial atrás/adelante**, estado `Explorar` multifunción (inicial/búsqueda/álbum/playlist) y `volverAResultados()`. Reemplaza al router por eventos de `window`.
-- **`vistas/`** — Un componente por archivo: `inicio.tsx` (hero + "Hecho para ti", cache de módulo), `busqueda.tsx` (`useBuscador`: debounce 400ms + historial + sugerencias), `explorar.tsx`, `album.tsx`, `playlist.tsx`, `biblioteca.tsx` (recientes + favs + playlists, recarga por visita) y `perfil.tsx` (perfil + tabs de rango con cache por rango).
+- **`vistas/`** — Un componente por archivo: `inicio.tsx` (hero + "Hecho para ti", cache de módulo), `busqueda.tsx` (`useBuscador`: debounce 400ms + historial + sugerencias), `explorar.tsx`, `album.tsx`, `playlist.tsx`, `biblioteca.tsx` (recientes + favs + playlists, recarga por visita), `perfil.tsx` (perfil + tabs de rango con cache por rango) y `artista.tsx` (detalle con top tracks y álbumes).
 
 > **Comunicación sin ciclos:** donde había eventos en `window` (`mostrar-vista`, `volver-a-resultados`, `volver-a-explorar`) ahora hay funciones del contexto de navegación (`navegar()`, `buscar()`, `abrirAlbum()`, `abrirPlaylist()`, `volverAResultados()`). Las vistas no se importan entre sí.
 
@@ -405,6 +407,7 @@ solo cambia la extensión):
 | `AlbumCard` / `PlaylistCard` | `componentes.tsx` | Abren el detalle vía navegación (o Spotify externo en el home) |
 | `TrackList` | `componentes.tsx` | Filas con play (compartida por álbumes y playlists) |
 | `DetalleAlbum` | `vistas/album.tsx` | Álbum con canciones + volver a resultados |
+| `DetalleArtista` | `vistas/artista.tsx` | Artista con top tracks, álbumes y volver a la vista de origen |
 | `toggle()` / `recargar()` | `estado.tsx` | Toggle corazón en Supabase y recarga de favoritos |
 | `mostrarToast()` | `notificacion.tsx` | Toast ok/error/info de 3s |
 | `navegar()` / `buscar()` / `volverAResultados()` | `navegacion.tsx` | Cambio de vista, búsqueda y retorno con historial |

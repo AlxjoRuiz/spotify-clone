@@ -124,17 +124,13 @@ export function TrackCard({
     );
 }
 
-// Tarjeta de artista (crearTarjetaArtista): foto circular, click abre Spotify.
+// Tarjeta de artista (ArtistCard): foto circular, click abre el detalle interno.
 export function ArtistCard({ artista, sublabel }: { artista: Artist; sublabel?: string }) {
+    const { abrirArtista } = useNav();
     const portada = artista.images?.[0]?.url || PORTADA_DEFECTO;
 
     return (
-        <div
-            className={cardBase}
-            onClick={() => {
-                if (artista.external_urls?.spotify) window.open(artista.external_urls.spotify, '_blank');
-            }}
-        >
+        <div className={cardBase} onClick={() => abrirArtista(artista.id)}>
             <img src={portada} alt={artista.name} className={`${cardImg} rounded-full`} loading="lazy" />
             <p className={cardNombre}>{artista.name}</p>
             <p className={cardSub}>{sublabel || 'Artista'}</p>

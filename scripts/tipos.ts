@@ -85,3 +85,17 @@ export interface PlaylistDetalle {
     };
     tracks: Track[];
 }
+
+export interface ArtistaDetalle {
+    artista: {
+        id: string;
+        nombre: string;
+        imagen: string | null;
+        generos: string[];
+        seguidores: number;
+        popularidad: number;
+        spotify_url: string | null;
+    };
+    top: Track[];
+    albums: AlbumRef[];
+}

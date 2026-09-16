@@ -12,7 +12,8 @@ export type ExplorarState =
     | { kind: 'inicial'; nonce: number }
     | { kind: 'busqueda'; texto: string; busquedaId: number }
     | { kind: 'album'; id: string }
-    | { kind: 'playlist'; id: string };
+    | { kind: 'playlist'; id: string }
+    | { kind: 'artista'; id: string; desde: Vista };
 
 interface NavegacionCtx {
     vista: Vista;
@@ -26,6 +27,7 @@ interface NavegacionCtx {
     buscar: (texto: string) => void;
     abrirAlbum: (id: string) => void;
     abrirPlaylist: (id: string) => void;
+    abrirArtista: (id: string) => void;
     volverAResultados: () => void;
 }
 
@@ -91,6 +93,15 @@ export function NavProvider({ children }: { children: ReactNode }) {
         setVista('Explorar');
     }, []);
 
+    // Abre el detalle de artista recordando desde qué vista vino (para volver)
+    const abrirArtista = useCallback(
+        (id: string) => {
+            setExplorar({ kind: 'artista', id, desde: vista });
+            setVista('Explorar');
+        },
+        [vista]
+    );
+
     const volverAResultados = useCallback(() => {
         if (!ultimaBusqueda) {
             // Como 'volver-a-explorar': recarga el contenido inicial
@@ -116,6 +127,7 @@ export function NavProvider({ children }: { children: ReactNode }) {
             buscar,
             abrirAlbum,
             abrirPlaylist,
+            abrirArtista,
             volverAResultados,
         }),
         [
@@ -130,6 +142,7 @@ export function NavProvider({ children }: { children: ReactNode }) {
             buscar,
             abrirAlbum,
             abrirPlaylist,
+            abrirArtista,
             volverAResultados,
         ]
     );

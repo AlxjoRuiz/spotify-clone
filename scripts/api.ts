@@ -4,6 +4,7 @@
 import type {
     AlbumDetalle,
     Artist,
+    ArtistaDetalle,
     FavoritoRow,
     Perfil,
     PlaylistDetalle,
@@ -46,6 +47,7 @@ export const API = {
         pedir<PlaylistDetalle>(`/api/playlists/${idPlaylist}/tracks`),
     buscar: (texto: string) => pedir<BuscarResultado>(`/api/buscar?q=${encodeURIComponent(texto)}`),
     albumTracks: (idAlbum: string) => pedir<AlbumDetalle>(`/api/album/${idAlbum}/tracks`),
+    artistaDetalle: (idArtista: string) => pedir<ArtistaDetalle>(`/api/artistas/${idArtista}`),
     perfil: () => pedir<Perfil>('/api/perfil'),
     topArtistas: (timeRange: TimeRange = 'medium_term') =>
         pedir<{ items: Artist[] }>(`/api/top-artistas?time_range=${timeRange}`),
