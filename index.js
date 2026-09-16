@@ -1,7 +1,5 @@
-// ------------------------------------------------------------------
-// SERVER Spotify Clone
-// Backend Express que actúa como puente entre el frontend, Spotify y Supabase.
-// ------------------------------------------------------------------
+// SERVER Spotify Clone: backend Express que actúa como puente entre el
+// frontend, Spotify y Supabase (login OAuth, proxy de la API y favoritos).
 require('dotenv').config(); // Carga las variables del .env (credenciales, puerto)
 
 const path = require('path');
@@ -12,9 +10,7 @@ const { upsertSupabaseTable, leerSupabase, borrarSupabase } = require('./lib/sup
 
 const app = express();
 
-// ------------------------------------------------------------------
-// CONFIGURACIÓN GLOBAL
-// ------------------------------------------------------------------
+// Configuración global: JSON para el body, estáticos del build y sesiones firmadas.
 app.use(express.json()); // Necesario para leer JSON en req.body (POST /api/favoritos)
 app.use(express.static(path.join(__dirname, 'dist'))); // Sirve el build de Vite (npm run build)
 
@@ -32,9 +28,7 @@ app.use(session({
 
 const PORT = process.env.PORT || 3000;
 
-// ------------------------------------------------------------------
-// CREDENCIALES (Spotify + Supabase)
-// ------------------------------------------------------------------
+// Credenciales leídas del .env (nunca se suben al repo).
 const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 const SPOTIFY_REDIRECT_URI = process.env.SPOTIFY_REDIRECT_URI;
@@ -43,11 +37,8 @@ const SPOTIFY_REDIRECT_URI = process.env.SPOTIFY_REDIRECT_URI;
 const SCOPE_SPOTIFY = 'user-read-private user-read-email user-read-recently-played user-top-read playlist-read-private';
 const RANGOS_DE_TIEMPO = ['short_term', 'medium_term', 'long_term'];
 
-// ------------------------------------------------------------------
-// HELPERS DE SUPABASE
-// Cliente oficial @supabase/supabase-js (ver lib/supabase.js).
-// Tablas de la migración 0001_esquema_inicial.sql: users, user_profiles, favoritos.
-// ------------------------------------------------------------------
+// Helpers de Supabase: el cliente oficial vive en lib/supabase.ts y trabaja
+// con las tablas de la migración 0001 (users, user_profiles, favoritos).
 
 // Jerry-rigged: la tabla `favoritos` referencia a `user_profiles.id`.
 // Este helper devuelve ese id (guardado en la sesión durante el login).
@@ -55,9 +46,8 @@ function obtenerUserProfileId(req) {
     return req.session.spotify_user_profile_id || null;
 }
 
-// ------------------------------------------------------------------
-// AUTH SPOTIFY (Authorization Code Flow)
-// ------------------------------------------------------------------
+// Auth Spotify (Authorization Code Flow): redirección a Spotify, callback
+// que canjea el code por tokens y los guarda, más cierre de sesión.
 
 // Paso 1: redirigir al usuario a la pantalla de autorización de Spotify
 app.get('/auth/spotify', (req, res) => {
@@ -141,9 +131,7 @@ app.get('/auth/logout', (req, res) => {
     });
 });
 
-// ------------------------------------------------------------------
-// MIDDLEWARE DE PROTECCIÓN
-// ------------------------------------------------------------------
+// Middleware de protección: solo deja pasar si hay access_token en sesión.
 
 // Solo deja pasar si hay access_token en la sesión; si no, manda al login
 function verificarLogin(req, res, next) {
@@ -159,9 +147,7 @@ app.get('/pages/dashboard.html', verificarLogin, (req, res) => {
     res.sendFile(path.join(__dirname, 'dist', 'pages', 'dashboard.html'));
 });
 
-// ------------------------------------------------------------------
-// HELPERS DE SPOTIFY
-// ------------------------------------------------------------------
+// Helpers de Spotify: renuevan el token vencido y reintentan la petición.
 
 // Usa el refresh_token guardado en Supabase para pedirle a Spotify un access_token nuevo
 async function renovarAccessTokenSpotify(userId) {
@@ -236,9 +222,7 @@ app.use('/api', (req, res, next) => {
     res.status(401).json({ error: 'No autorizado' });
 });
 
-// ------------------------------------------------------------------
-// RUTAS DE LA API (todas protegidas por sesión en el frontend)
-// ------------------------------------------------------------------
+// Rutas /api/*: devuelven JSON al frontend; sin sesión responden 401.
 
 // Canciones escuchadas recientemente
 app.get('/api/canciones', async (req, res) => {
@@ -431,9 +415,7 @@ app.get('/api/album/:id/tracks', async (req, res) => {
     }
 });
 
-// ------------------------------------------------------------------
-// ARTISTA (perfil + top tracks + álbumes para la vista de artista)
-// ------------------------------------------------------------------
+// Detalle de artista: perfil + top tracks + álbumes para la vista de artista.
 
 // Detalle de un artista en una sola respuesta (3 llamadas en paralelo)
 app.get('/api/artistas/:id', async (req, res) => {
@@ -464,9 +446,7 @@ app.get('/api/artistas/:id', async (req, res) => {
     }
 });
 
-// ------------------------------------------------------------------
-// CANCIONES FAVORITAS (persistidas en Supabase, tabla `favoritos`)
-// ------------------------------------------------------------------
+// Favoritos en Supabase (tabla favoritos): agregar, listar y borrar por usuario.
 
 // AGREGAR/ACTUALIZAR un favorito
 app.post('/api/favoritos', async (req, res) => {
@@ -535,9 +515,7 @@ app.delete('/api/favoritos/:trackId', async (req, res) => {
     }
 });
 
-// ------------------------------------------------------------------
-// ARRANQUE
-// ------------------------------------------------------------------
+// Arranque: ruta de salud y escucha en el puerto configurado.
 app.get('/', (req, res) => {
     res.send('¡Servidor funcionando!');
 });

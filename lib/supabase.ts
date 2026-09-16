@@ -1,9 +1,6 @@
-// ------------------------------------------------------------------
-// Supabase — cliente oficial (@supabase/supabase-js) en TypeScript.
-// Usa las MISMAS tablas de la migración 0001_esquema_inicial.sql:
-//   public.users, public.user_profiles, public.favoritos
-// No se toca el SQL ni la lógica: mismos exports que usaba index.js.
-// ------------------------------------------------------------------
+// Supabase en TypeScript: cliente oficial (@supabase/supabase-js) que usa las
+// tablas de la migración 0001 (users, user_profiles, favoritos) sin tocar el
+// SQL. Expone los mismos helpers que consume index.js.
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.SUPABASE_URL;

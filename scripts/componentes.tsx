@@ -8,7 +8,7 @@ import type { AlbumRef, Artist, PlaylistRef, Track } from './tipos';
 // Componentes — mismo archivo que componentes.js: tarjetas reutilizables
 // (canción, artista, álbum, playlist), lista de tracks y estados de carga.
 
-// ---------- Estados de carga (.perfil-loading / .loading-container) ----------
+// Spinners y mensajes de error/ vacío que muestran las vistas al cargar.
 
 export function Spinner({ texto }: { texto?: string }) {
     return (
@@ -28,7 +28,7 @@ export function ErrorCarga({ texto }: { texto: string }) {
     );
 }
 
-// ---------- Secciones (crearTituloSeccion / agregarSeccion) ----------
+// Títulos y grillas que agrupan tarjetas dentro de cada vista.
 
 export function Seccion({ titulo, children }: { titulo: string; children: ReactNode }) {
     return (
@@ -51,7 +51,8 @@ export function SinResultados({ texto }: { texto: string }) {
     return <p className="col-span-full text-[#B3B3B3]">{texto}</p>;
 }
 
-// ---------- Tarjetas ----------
+// Tarjetas de canción, artista, álbum y playlist + lista de tracks.
+// Comparten la misma base visual (fondo oscuro, hover, textos recortados).
 
 const cardBase =
     'group relative w-full cursor-pointer overflow-hidden rounded-lg bg-[#181818] p-4 transition-colors duration-300 hover:bg-[#282828] max-md:max-w-[160px] max-[480px]:max-w-[140px] max-[480px]:p-2.5';
