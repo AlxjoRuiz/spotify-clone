@@ -8,7 +8,7 @@ import { saludoSegunHora } from './utils';
 import { cerrarSesion, nombreUsuario } from './sesion';
 import { ToastProvider } from './notificacion';
 import { FavoritosProvider } from './estado';
-import { PlayerProvider, Reproductor } from './reproductor';
+import { PlayerProvider, Reproductor, ColaDrawer } from './reproductor';
 import { NavProvider, useNav, type Vista } from './navegacion';
 import { useBuscador } from './vistas/busqueda';
 import { Inicio } from './vistas/inicio';
@@ -176,6 +176,7 @@ function Contenido() {
             <div className="md:col-start-2 max-md:order-4">
                 <Reproductor />
             </div>
+            <ColaDrawer />
         </div>
     );
 }

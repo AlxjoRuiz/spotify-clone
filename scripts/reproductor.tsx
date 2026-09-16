@@ -25,9 +25,16 @@ interface ReproductorCtx {
     reproduciendo: boolean;
     reproducirPreview: (previewUrl: string, nombre: string, artista: string, portada?: string, trackId?: string) => void;
     reproducirTrack: (track: Track, portada?: string) => void;
+    // Cola visible (vista Cola)
+    cola: ColaItem[];
+    indiceActual: number;
+    reproducirIndice: (i: number) => void;
+    reproducirCola: (items: ColaItem[], inicio?: number) => void;
+    colaAbierta: boolean;
+    toggleCola: () => void;
 }
 
-// Estado completo interno (lógica + UI del footer)
+// Estado completo interno (lógica + UI del footer/drawer)
 interface ReproductorFull extends ReproductorCtx {
     aleatorio: boolean;
     repetir: ModoRepetir;
@@ -62,6 +69,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const [reproduciendo, setReproduciendo] = useState(false);
     const [tiempoActual, setTiempoActual] = useState(0);
     const [tiempoTotal, setTiempoTotal] = useState(0);
+    const [colaAbierta, setColaAbierta] = useState(false);
 
     const actual = indice >= 0 && indice < cola.length ? cola[indice] : null;
 
@@ -168,6 +176,22 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         else audio.pause();
     }, [cola.length]);
 
+    const toggleCola = useCallback(() => setColaAbierta((v) => !v), []);
+
+    const irAIndice = useCallback(
+        (i: number) => reproducirIndice(i, cola),
+        [cola, reproducirIndice]
+    );
+
+    const reproducirCola = useCallback(
+        (items: ColaItem[], inicio = 0) => {
+            if (items.length === 0) return;
+            setCola(items);
+            reproducirIndice(inicio, items);
+        },
+        [reproducirIndice]
+    );
+
     const toggleAleatorio = useCallback(() => setAleatorio((v) => !v), []);
 
     const ciclarRepetir = useCallback(() => {
@@ -254,6 +278,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             reproduciendo,
             reproducirPreview,
             reproducirTrack,
+            cola,
+            indiceActual: indice,
+            reproducirIndice: irAIndice,
+            reproducirCola,
+            colaAbierta,
+            toggleCola,
             aleatorio,
             repetir,
             volumen,
@@ -274,6 +304,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             reproduciendo,
             reproducirPreview,
             reproducirTrack,
+            cola,
+            indice,
+            irAIndice,
+            reproducirCola,
+            colaAbierta,
+            toggleCola,
             aleatorio,
             repetir,
             volumen,
@@ -393,6 +429,15 @@ export function Reproductor() {
                     >
                         <i className={`fa-solid ${p.repetir === 'una' ? 'fa-repeat-1' : 'fa-repeat'}`}></i>
                     </button>
+                    <button
+                        title="Cola de reproducción"
+                        onClick={p.toggleCola}
+                        className={`border-none bg-transparent p-2 text-base transition-colors hover:text-white ${
+                            p.colaAbierta ? 'text-[#1DB954] hover:text-[#1ed760]' : 'text-[#B3B3B3]'
+                        }`}
+                    >
+                        <i className="fa-solid fa-list"></i>
+                    </button>
                 </div>
 
                 <div className="flex w-full items-center gap-2.5">
@@ -438,4 +483,103 @@ export function usePlayer(): ReproductorCtx {
     const ctx = useContext(Ctx);
     if (!ctx) throw new Error('usePlayer fuera de PlayerProvider');
     return ctx;
+}
+
+// Vista Cola: panel lateral con lo que suena y lo que sigue.
+// (Spotify la muestra al costado; acá es un drawer fijo a la derecha.)
+export function ColaDrawer() {
+    const p = useReproductor();
+    if (!p.colaAbierta) return null;
+
+    const siguientes = p.cola
+        .map((c, i) => ({ c, i }))
+        .filter(({ i }) => i > p.indiceActual);
+
+    return (
+        <aside className="fixed bottom-0 right-0 top-0 z-[100] flex w-[320px] max-w-[85vw] flex-col border-l border-[#282828] bg-[#121212] text-white shadow-[-8px_0_24px_rgba(0,0,0,0.5)]">
+            <div className="flex items-center justify-between border-b border-[#282828] px-4 py-3">
+                <h2 className="m-0 text-[1.1rem] font-bold">Cola</h2>
+                <button
+                    onClick={p.toggleCola}
+                    title="Cerrar cola"
+                    className="border-none bg-transparent text-[1rem] text-[#B3B3B3] transition-colors hover:text-white"
+                >
+                    <i className="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div className="scroll-spotify flex-1 overflow-y-auto p-4">
+                <p className="m-0 mb-2 text-[0.75rem] font-semibold uppercase tracking-[1px] text-[#B3B3B3]">
+                    Sonando ahora
+                </p>
+                {p.actual ? (
+                    <FilaCola
+                        numero="♪"
+                        nombre={p.actual.nombre}
+                        artista={p.actual.artista}
+                        portada={p.actual.portada}
+                        activa
+                        onPlay={() => p.reproducirIndice(p.indiceActual)}
+                    />
+                ) : (
+                    <p className="text-[0.85rem] text-[#B3B3B3]">Nada en cola.</p>
+                )}
+
+                <p className="m-0 mb-2 mt-5 text-[0.75rem] font-semibold uppercase tracking-[1px] text-[#B3B3B3]">
+                    Siguientes
+                </p>
+                {siguientes.length === 0 && (
+                    <p className="text-[0.85rem] text-[#B3B3B3]">Dale play a una canción para armar la cola.</p>
+                )}
+                {siguientes.map(({ c, i }) => (
+                    <FilaCola
+                        key={`${c.previewUrl}-${i}`}
+                        numero={String(i + 1)}
+                        nombre={c.nombre}
+                        artista={c.artista}
+                        portada={c.portada}
+                        onPlay={() => p.reproducirIndice(i)}
+                    />
+                ))}
+            </div>
+        </aside>
+    );
+}
+
+function FilaCola({
+    numero,
+    nombre,
+    artista,
+    portada,
+    activa,
+    onPlay,
+}: {
+    numero: string;
+    nombre: string;
+    artista: string;
+    portada?: string;
+    activa?: boolean;
+    onPlay: () => void;
+}) {
+    return (
+        <button
+            onClick={onPlay}
+            className="group flex w-full cursor-pointer items-center gap-3 rounded-md border-none bg-transparent px-2 py-2 text-left transition-colors hover:bg-white/10"
+        >
+            {portada ? (
+                <img src={portada} alt="" className="h-10 w-10 rounded object-cover" loading="lazy" />
+            ) : (
+                <span className="flex h-10 w-10 items-center justify-center rounded bg-[#282828] text-[0.8rem] text-[#B3B3B3]">
+                    {numero}
+                </span>
+            )}
+            <span className="flex min-w-0 flex-1 flex-col">
+                <span className={`truncate text-[0.85rem] font-semibold ${activa ? 'text-[#1DB954]' : 'text-white'}`}>
+                    {nombre}
+                </span>
+                <span className="truncate text-[0.75rem] text-[#B3B3B3]">{artista}</span>
+            </span>
+            <i className="fa-solid fa-play text-[0.7rem] text-[#B3B3B3] opacity-0 transition-opacity group-hover:opacity-100"></i>
+        </button>
+    );
 }
