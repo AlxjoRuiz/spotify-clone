@@ -8,11 +8,15 @@
 4. Supabase conserva el usuario, sus tokens renovables y sus canciones favoritas.
 5. El reproductor usa las vistas previas públicas que devuelve Spotify; no reproduce el catálogo completo.
 
+Las playlists se abren dentro de esta aplicación. El enlace a Spotify solo se usa cuando un componente lo pide explícitamente.
+
 ## Flujo de autenticación
 
 - `GET /auth/spotify`: crea un `state` aleatorio en la sesión y redirige a Spotify.
 - `GET /auth/spotify/callback`: comprueba ese `state`, cambia el `code` por tokens y persiste los datos en Supabase.
 - `GET /auth/logout`: destruye la sesión.
+
+En local, `localhost` y `127.0.0.1` no comparten cookies. Usá siempre el host registrado en `SPOTIFY_REDIRECT_URI`; la configuración incluida usa `http://127.0.0.1:3000`.
 
 Si Supabase falla, el login de Spotify continúa, pero favoritos y renovación persistente de tokens quedan deshabilitados hasta corregir Supabase.
 
@@ -30,10 +34,29 @@ La búsqueda acepta términos de hasta 100 caracteres y las llamadas a Spotify t
 
 ## Estructura
 
-- `index.js`: servidor Express, OAuth, sesión y proxy seguro a Spotify.
-- `lib/supabase.ts`: acceso exclusivo a las tres tablas de Supabase.
-- `scripts/`: interfaz React, estado, reproductor y cliente HTTP.
-- `supabase/migrations/`: esquema idempotente de la base de datos.
+| Archivo o carpeta | Responsabilidad |
+|---|---|
+| `index.js` | Servidor Express: login OAuth, sesión, rutas `/api`, renovación de tokens y archivos compilados. |
+| `lib/supabase.ts` | Cliente de Supabase y funciones reutilizables para leer, guardar y borrar datos. |
+| `pages/login.html` | Punto de entrada HTML de la pantalla de inicio de sesión. |
+| `pages/dashboard.html` | Punto de entrada HTML del dashboard protegido. |
+| `scripts/login.tsx` | Interfaz de login y enlace seguro hacia la autorización de Spotify. |
+| `scripts/main.tsx` | Monta la aplicación: barra lateral, encabezado, vistas y reproductor. |
+| `scripts/api.ts` | Único cliente HTTP del frontend; gestiona errores y sesión expirada. |
+| `scripts/sesion.ts` | Nombre mostrado del usuario y cierre de sesión. |
+| `scripts/navegacion.tsx` | Estado de vistas, búsquedas y botones atrás/adelante. |
+| `scripts/estado.tsx` | Estado global y sincronización de canciones favoritas. |
+| `scripts/reproductor.tsx` | Reproductor de previews, cola, volumen, aleatorio y repetición. |
+| `scripts/componentes.tsx` | Tarjetas, listas de canciones, loaders y mensajes reutilizables. |
+| `scripts/vistas/` | Pantallas de Inicio, Explorar, Biblioteca, Perfil, álbum, artista y playlist. |
+| `scripts/tipos.ts` | Tipos TypeScript de datos provenientes de Spotify y Supabase. |
+| `scripts/utils.ts` | Formateo de tiempos, fechas, duración y valores visuales comunes. |
+| `scripts/notificacion.tsx` | Sistema de notificaciones breves (toasts). |
+| `styles/index.css` | Estilos globales y utilidades visuales que complementan Tailwind. |
+| `vite.config.mts` | Configuración de desarrollo y compilación del frontend con Vite. |
+| `supabase/migrations/` | SQL idempotente para crear las tablas y restricciones de Supabase. |
+| `.env` | Credenciales locales; nunca se sube al repositorio. |
+| `.env.example` | Plantilla pública de variables necesarias para ejecutar el proyecto. |
 
 ## Operación
 

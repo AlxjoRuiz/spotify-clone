@@ -2,6 +2,8 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
+// Configuración de Vite: compila React/Tailwind y conserva las URLs HTML que
+// consume Express. El proxy solo facilita llamadas locales durante desarrollo.
 // Migración in-place del frontend legacy:
 // - Vite root = la raíz del repo (sin proyecto aparte).
 // - Entries = las mismas URLs que sirve el backend (/pages/login.html,

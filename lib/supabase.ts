@@ -13,6 +13,8 @@ export type Filtros = Record<string, string | number>;
 let supabase: SupabaseClient | null = null;
 
 function esUrlSupabaseValida(value: string | undefined) {
+    // El SDK agrega por sí mismo rutas como /rest/v1; por eso esta variable
+    // debe ser únicamente la URL base del proyecto.
     if (!value) return false;
     try {
         const url = new URL(value);

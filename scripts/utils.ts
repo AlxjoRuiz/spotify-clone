@@ -1,5 +1,5 @@
-// Utilidades — mismo archivo y lógica que utils.js, con tipos.
-// escaparHTML() no se porta: React escapa el texto por defecto.
+// Funciones puras y reutilizables: reciben datos, no modifican estado y son
+// fáciles de usar desde cualquier vista. React ya escapa el texto por defecto.
 export const PORTADA_DEFECTO =
     'data:image/svg+xml;charset=utf-8,' +
     encodeURIComponent(

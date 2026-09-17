@@ -10,6 +10,8 @@ const axios = require('axios');             // Peticiones HTTP a Spotify
 const { upsertSupabaseTable, leerSupabase, borrarSupabase } = require('./lib/supabase'); // Supabase SDK (mismas tablas de la migración 0001)
 
 const app = express();
+// Cliente aislado para Spotify: el timeout evita que una caída externa deje
+// solicitudes HTTP abiertas indefinidamente.
 const spotifyHttp = axios.create({ timeout: 15_000 });
 
 // Configuración global: JSON para el body, estáticos del build y sesiones firmadas.
@@ -23,6 +25,8 @@ const PORT = process.env.PORT || 3000;
 const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 const SPOTIFY_REDIRECT_URI = process.env.SPOTIFY_REDIRECT_URI;
+// Fallar al inicio es más claro y seguro que descubrir una credencial ausente
+// a mitad de un callback OAuth.
 const variablesRequeridas = {
     SPOTIFY_CLIENT_ID,
     SPOTIFY_CLIENT_SECRET,
@@ -39,6 +43,8 @@ if (faltantes.length > 0) {
 
 if (process.env.NODE_ENV === 'production') app.set('trust proxy', 1);
 
+// La cookie solo contiene el identificador firmado de la sesión; los tokens
+// permanecen del lado del servidor. En producción solo viaja mediante HTTPS.
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
@@ -176,6 +182,8 @@ function describirError(error) {
 }
 
 function spotifyTokenHeaders() {
+    // Spotify espera Client ID y Client Secret en Basic Auth al canjear o
+    // renovar tokens. Nunca se devuelven estas credenciales al frontend.
     const credenciales = Buffer.from(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`).toString('base64');
     return {
         'Content-Type': 'application/x-www-form-urlencoded',

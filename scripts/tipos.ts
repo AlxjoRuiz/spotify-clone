@@ -1,5 +1,5 @@
-// Tipos del dominio Spotify + filas Supabase.
-// (Nuevo archivo: en JS estos contratos eran implícitos en cada módulo.)
+// Contratos compartidos entre vistas y API. No contienen lógica: evitan que
+// cada componente suponga nombres o formas distintas para los mismos datos.
 export type TimeRange = 'short_term' | 'medium_term' | 'long_term';
 
 export interface SpotifyImage {

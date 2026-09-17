@@ -15,6 +15,8 @@ import type {
 } from './tipos';
 
 async function pedir<T>(url: string, opciones?: RequestInit): Promise<T> {
+    // Punto único de comunicación con el backend: centralizar aquí los fallos
+    // impide que cada vista duplique manejo de red y de sesión expirada.
     let response: Response;
     try {
         response = await fetch(url, opciones);
@@ -48,6 +50,8 @@ export interface NuevoFavorito {
 }
 
 export const API = {
+    // Cada método representa una ruta del backend y devuelve datos ya tipados;
+    // las vistas no construyen URLs ni manejan fetch directamente.
     playlistsPopulares: () => pedir<{ playlists: PlaylistRef[] }>('/api/playlists-populares'),
     explorar: () => pedir<{ playlists: PlaylistRef[]; nuevos: Artist[] }>('/api/explorar'),
     misPlaylists: () => pedir<{ playlists: PlaylistRef[] }>('/api/mis-playlists'),

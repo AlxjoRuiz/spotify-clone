@@ -172,15 +172,18 @@ export function AlbumCard({ album }: { album: AlbumRef }) {
     );
 }
 
-// Tarjeta de playlist (crearTarjetaPlaylist): con abrirDetalle abre el
-// detalle en la app; sin él abre Spotify en otra pestaña (home).
-export function PlaylistCard({ playlist, abrirDetalle }: { playlist: PlaylistRef; abrirDetalle?: boolean }) {
+// Tarjeta de playlist: por defecto abre el detalle dentro del clon. Así el
+// usuario navega por la aplicación sin ser enviado a Spotify. `abrirDetalle`
+// queda disponible por si otra pantalla necesita forzar un enlace externo.
+export function PlaylistCard({ playlist, abrirDetalle = true }: { playlist: PlaylistRef; abrirDetalle?: boolean }) {
     const { abrirPlaylist } = useNav();
     const portada = playlist.images?.[0]?.url || PORTADA_DEFECTO;
     const urlExterna = playlist.external_urls?.spotify;
 
     return (
         <a
+            // El hash proporciona un destino válido para teclado; React evita
+            // la navegación del navegador y cambia la vista sin recargar.
             href={abrirDetalle ? `#playlist-${playlist.id}` : urlExterna || '#'}
             className={cardLinkBase}
             target={!abrirDetalle && urlExterna ? '_blank' : undefined}

@@ -3,6 +3,8 @@
 const paramsURL = new URLSearchParams(window.location.search);
 
 let nombreUsuario = paramsURL.get('nombre');
+// Persistimos solo el nombre para la interfaz; no se usa como prueba de
+// autenticación. Esa validación siempre la realiza el backend mediante cookie.
 if (nombreUsuario) localStorage.setItem('usuario_nombre', nombreUsuario);
 if (!nombreUsuario) {
     nombreUsuario = localStorage.getItem('usuario_nombre');
@@ -16,5 +18,6 @@ if (paramsURL.get('nombre')) {
 export { nombreUsuario };
 
 export function cerrarSesion(): void {
+    // El servidor destruye la sesión y después redirige al login.
     window.location.href = '/auth/logout';
 }
