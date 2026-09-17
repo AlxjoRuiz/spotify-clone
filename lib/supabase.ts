@@ -12,13 +12,23 @@ export type Filtros = Record<string, string | number>;
 
 let supabase: SupabaseClient | null = null;
 
-if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+function esUrlSupabaseValida(value: string | undefined) {
+    if (!value) return false;
+    try {
+        const url = new URL(value);
+        return (url.protocol === 'https:' || url.protocol === 'http:') && url.hostname !== 'tu-proyecto.supabase.co';
+    } catch {
+        return false;
+    }
+}
+
+if (SUPABASE_URL && esUrlSupabaseValida(SUPABASE_URL) && SUPABASE_SERVICE_ROLE_KEY && SUPABASE_SERVICE_ROLE_KEY !== 'tu_service_role_key') {
     supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
         auth: { persistSession: false },
     });
 } else {
     console.warn(
-        '[supabase] SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY faltan. Las rutas de favoritos/de tokens devolverán error controlado.'
+        '[supabase] Configurá SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY válidos. Las rutas de favoritos y renovación de tokens estarán deshabilitadas.'
     );
 }
 

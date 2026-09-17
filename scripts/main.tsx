@@ -55,6 +55,7 @@ function Sidebar() {
                     id="btn-buscar"
                     onClick={() => ejecutar(texto)}
                     title="Buscar"
+                    aria-label="Buscar"
                     className="flex h-[30px] w-[30px] items-center justify-center rounded-full border-none bg-[#1DB954] font-['Poppins',sans-serif] text-[0.85rem] text-black transition-all hover:scale-110 hover:bg-[#1ed760]"
                 >
                     <i className="fa-solid fa-magnifying-glass"></i>
@@ -120,6 +121,7 @@ function Header() {
                     onClick={atras}
                     disabled={!puedeAtras}
                     title="Volver"
+                    aria-label="Volver"
                     className="flex h-8 w-8 items-center justify-center rounded-full border-none bg-black/60 text-[0.9rem] text-white transition-all hover:scale-105 hover:bg-black/85 disabled:text-[#B3B3B3] max-md:h-7 max-md:w-7 max-md:text-[0.8rem]"
                 >
                     <i className="fa-solid fa-chevron-left"></i>
@@ -128,6 +130,7 @@ function Header() {
                     onClick={adelante}
                     disabled={!puedeAdelante}
                     title="Adelante"
+                    aria-label="Adelante"
                     className="flex h-8 w-8 items-center justify-center rounded-full border-none bg-black/60 text-[0.9rem] text-white transition-all hover:scale-105 hover:bg-black/85 disabled:text-[#B3B3B3] max-md:h-7 max-md:w-7 max-md:text-[0.8rem]"
                 >
                     <i className="fa-solid fa-chevron-right"></i>
@@ -151,6 +154,7 @@ function Header() {
                     id="btn-logout"
                     onClick={cerrarSesion}
                     title="Cerrar sesión"
+                    aria-label="Cerrar sesión"
                     className="ml-1 border-none bg-transparent p-0.5 text-[0.85rem] text-[#616161] transition-colors hover:text-black"
                 >
                     <i className="fa-solid fa-right-from-bracket"></i>

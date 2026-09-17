@@ -1,8 +1,8 @@
 # Spotify Clone
 
-Clon de Spotify con **login usando tu cuenta de Spotify** (Authorization Code Flow), dashboard completo con reproductor, búsqueda en vivo, perfil dinámico, top de artistas/canciones, álbumes, playlists del usuario, favoritos y escuchado recientemente. Backend en Express, persistencia en Supabase.
+Aplicación web que conecta una cuenta de Spotify mediante OAuth, muestra contenido y estadísticas del usuario, y guarda sus favoritos en Supabase. El navegador nunca recibe ni la clave privada de Spotify ni la clave de servicio de Supabase.
 
-> Documentación técnica completa en [`.docs/DOCUMENTACION.md`](./.docs/DOCUMENTACION.md).
+> Documentación técnica breve en [`.docs/DOCUMENTACION.md`](./.docs/DOCUMENTACION.md).
 
 ## Funcionalidades
 
@@ -34,6 +34,8 @@ Desarrollo del frontend (hot reload): `npm run dev` → `http://localhost:5173` 
 > `npm start` corre el backend con `tsx` solo para resolver `lib/` en TS;
 > `index.js` sigue siendo JavaScript puro con `require()`.
 
+`npm run dev` es solo para el frontend: mantené `npm start` ejecutándose en otra terminal para que funcionen el login y las rutas `/api`.
+
 ## Variables de entorno (`.env` en la raíz)
 
 | Variable | Dónde se consigue |
@@ -42,8 +44,11 @@ Desarrollo del frontend (hot reload): `npm run dev` → `http://localhost:5173` 
 | `SPOTIFY_REDIRECT_URI` | Debe ser **idéntica** a la registrada en Spotify Dashboard → Settings → Redirect URIs (ej: `http://localhost:3000/auth/spotify/callback`) |
 | `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API |
 | `SESSION_SECRET` | Cualquier string largo aleatorio (firma la cookie de sesión) |
+| `NODE_ENV` | `development` localmente; `production` en el hosting para cookies seguras |
 
 > Si Spotify responde `redirect_uri: Not matching configuration`, la URI del `.env` y la del Dashboard no coinciden carácter por carácter (ojo con `localhost` vs `127.0.0.1`).
+
+Si el servidor registra `fetch failed` durante el callback, revisá también `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY`: ese mensaje corresponde a la escritura en Supabase posterior al login, no al callback de Spotify. La URL debe tener el formato `https://<project-ref>.supabase.co` y el proyecto debe estar activo y accesible desde el servidor.
 
 ## Base de datos
 
@@ -79,3 +84,5 @@ supabase/   → migrations (0001 esquema inicial: users, user_profiles, favorito
 ## Deploy
 
 Para una URL pública (Railway/Render/VPS): configurar las mismas variables de entorno en el hosting, registrar la Redirect URI de producción en el Spotify Dashboard (ej: `https://tu-app.up.railway.app/auth/spotify/callback`) y aplicar la migración en Supabase.
+
+Antes de publicar, reemplazá el almacenamiento de sesión en memoria de `express-session` por un store persistente (Redis o la base de datos). El store en memoria se pierde al reiniciar el proceso y no se debe usar con varias instancias del servidor.

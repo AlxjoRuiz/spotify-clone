@@ -15,12 +15,20 @@ import type {
 } from './tipos';
 
 async function pedir<T>(url: string, opciones?: RequestInit): Promise<T> {
-    const response = await fetch(url, opciones);
+    let response: Response;
+    try {
+        response = await fetch(url, opciones);
+    } catch {
+        throw new Error('No se pudo conectar con el servidor. Verificá que el backend esté iniciado.');
+    }
     if (response.status === 401) {
         window.location.href = '/pages/login.html';
         throw new Error('Sesión expirada');
     }
-    if (!response.ok) throw new Error(`Error ${response.status} en ${url}`);
+    if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(body?.error || `Error ${response.status} en ${url}`);
+    }
     return (await response.json()) as T;
 }
 

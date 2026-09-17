@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNav } from '../navegacion';
 
 // Búsqueda — mismo archivo que vistas/busqueda.js: historial (últimas 5),
@@ -49,6 +49,11 @@ export function useBuscador() {
             if (t && t !== ultimaEjecutada.current) ejecutar(t);
         }, BUSQUEDA_DEBOUNCE_MS);
     };
+
+    // Evita que un debounce pendiente navegue después de desmontar el sidebar.
+    useEffect(() => () => {
+        if (temporizador.current) window.clearTimeout(temporizador.current);
+    }, []);
 
     const elegirSugerencia = (s: string) => {
         setTexto(s);

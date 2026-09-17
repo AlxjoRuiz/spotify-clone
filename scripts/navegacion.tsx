@@ -37,7 +37,9 @@ export function NavProvider({ children }: { children: ReactNode }) {
     const [vista, setVista] = useState<Vista>('Inicio');
     const [explorar, setExplorar] = useState<ExplorarState>({ kind: 'inicial', nonce: 0 });
     const [ultimaBusqueda, setUltimaBusqueda] = useState('');
-    const [historialAtras, setHistorialAtras] = useState<Vista[]>([]);
+    // La vista inicial también forma parte del historial: así el primer salto
+    // a Explorar/Biblioteca puede volver correctamente a Inicio.
+    const [historialAtras, setHistorialAtras] = useState<Vista[]>(['Inicio']);
     const [historialAdelante, setHistorialAdelante] = useState<Vista[]>([]);
     const busquedaIdRef = useRef(0);
 

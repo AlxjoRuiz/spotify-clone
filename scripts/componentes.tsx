@@ -56,6 +56,9 @@ export function SinResultados({ texto }: { texto: string }) {
 
 const cardBase =
     'group relative w-full cursor-pointer overflow-hidden rounded-lg bg-[#181818] p-4 transition-colors duration-300 hover:bg-[#282828] max-md:max-w-[160px] max-[480px]:max-w-[140px] max-[480px]:p-2.5';
+// Las tarjetas que navegan son enlaces reales: se pueden abrir con teclado,
+// copiar su destino y son reconocibles para lectores de pantalla.
+const cardLinkBase = `${cardBase} block text-inherit no-underline`;
 const cardImg = 'relative z-[1] aspect-square w-full rounded object-cover shadow-[0_8px_24px_rgba(0,0,0,0.5)]';
 const cardNombre =
     "relative z-[1] m-0 mt-1.5 max-w-full truncate whitespace-nowrap text-ellipsis font-['Poppins',sans-serif] font-semibold text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.8)]";
@@ -131,11 +134,19 @@ export function ArtistCard({ artista, sublabel }: { artista: Artist; sublabel?: 
     const portada = artista.images?.[0]?.url || PORTADA_DEFECTO;
 
     return (
-        <div className={cardBase} onClick={() => abrirArtista(artista.id)}>
+        <a
+            href={`#artista-${artista.id}`}
+            className={cardLinkBase}
+            onClick={(e) => {
+                e.preventDefault();
+                abrirArtista(artista.id);
+            }}
+            aria-label={`Ver artista ${artista.name}`}
+        >
             <img src={portada} alt={artista.name} className={`${cardImg} rounded-full`} loading="lazy" />
             <p className={cardNombre}>{artista.name}</p>
             <p className={cardSub}>{sublabel || 'Artista'}</p>
-        </div>
+        </a>
     );
 }
 
@@ -145,11 +156,19 @@ export function AlbumCard({ album }: { album: AlbumRef }) {
     const portada = album.images?.[0]?.url || PORTADA_DEFECTO;
 
     return (
-        <div className={cardBase} onClick={() => abrirAlbum(album.id)}>
+        <a
+            href={`#album-${album.id}`}
+            className={cardLinkBase}
+            onClick={(e) => {
+                e.preventDefault();
+                abrirAlbum(album.id);
+            }}
+            aria-label={`Ver álbum ${album.name}`}
+        >
             <img src={portada} alt={album.name} className={cardImg} loading="lazy" />
             <p className={cardNombre}>{album.name}</p>
             <p className={cardSub}>{album.artists?.[0]?.name ?? 'Desconocido'}</p>
-        </div>
+        </a>
     );
 }
 
@@ -158,19 +177,28 @@ export function AlbumCard({ album }: { album: AlbumRef }) {
 export function PlaylistCard({ playlist, abrirDetalle }: { playlist: PlaylistRef; abrirDetalle?: boolean }) {
     const { abrirPlaylist } = useNav();
     const portada = playlist.images?.[0]?.url || PORTADA_DEFECTO;
+    const urlExterna = playlist.external_urls?.spotify;
 
     return (
-        <div
-            className={cardBase}
-            onClick={() => {
-                if (abrirDetalle) abrirPlaylist(playlist.id);
-                else if (playlist.external_urls?.spotify) window.open(playlist.external_urls.spotify, '_blank');
+        <a
+            href={abrirDetalle ? `#playlist-${playlist.id}` : urlExterna || '#'}
+            className={cardLinkBase}
+            target={!abrirDetalle && urlExterna ? '_blank' : undefined}
+            rel={!abrirDetalle && urlExterna ? 'noreferrer' : undefined}
+            onClick={(e) => {
+                if (abrirDetalle) {
+                    e.preventDefault();
+                    abrirPlaylist(playlist.id);
+                } else if (!urlExterna) {
+                    e.preventDefault();
+                }
             }}
+            aria-label={abrirDetalle ? `Ver playlist ${playlist.name}` : `Abrir playlist ${playlist.name} en Spotify`}
         >
             <img src={portada} alt={playlist.name} className={cardImg} loading="lazy" />
             <p className={cardNombre}>{playlist.name}</p>
             <p className={cardSub}>{playlist.owner?.display_name ?? 'Desconocido'}</p>
-        </div>
+        </a>
     );
 }
 
