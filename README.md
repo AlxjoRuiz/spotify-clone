@@ -7,7 +7,7 @@ Aplicación web que conecta una cuenta de Spotify mediante OAuth, muestra conten
 ## Funcionalidades
 
 - Login con Spotify + sesión persistente (renovación automática del token).
-- Reproductor con cola, shuffle, repeat, volumen y atajo `Espacio`.
+- Reproductor con cola, shuffle, repeat, volumen y atajo `Espacio`. Canción completa con Spotify Premium (Web Playback SDK); sin Premium usa previews de 30s.
 - Búsqueda en vivo con historial y sugerencias.
 - Vistas: Inicio ("Hecho para ti"), Explorar, Biblioteca, Perfil con tabs de rango.
 - Favoritos sincronizados con Supabase + corazón "me gusta" en el reproductor.

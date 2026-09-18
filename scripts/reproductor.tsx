@@ -3,22 +3,114 @@ import type { ReactNode } from 'react';
 import { useToast } from './notificacion';
 import { useFavoritos } from './estado';
 import { formatearTiempo } from './utils';
+import { API } from './api';
 import type { Track } from './tipos';
 
 // Reproductor — mismo archivo que reproductor.js: cola, play/pausa,
 // anterior/siguiente, shuffle, repeat (lista/una), volumen, progreso,
-// atajo Espacio y corazón "me gusta". La lógica vive en PlayerProvider;
-// la barra (maquetado de dashboard.html) es el componente Reproductor,
-// que se renderiza dentro del grid en main.tsx.
+// atajo Espacio y corazón "me gusta". Dos motores con la misma UI:
+// SDK (Web Playback SDK, canción completa, requiere Premium) y preview
+// (<audio> de 30s, fallback cuando no hay Premium, URI o dispositivo).
+// La lógica vive en PlayerProvider; la barra es el componente Reproductor
+// y la cola visible es ColaDrawer (ambos se renderizan en main.tsx).
 export interface ColaItem {
     previewUrl: string;
     nombre: string;
     artista: string;
     portada?: string;
     trackId?: string;
+    uri?: string;
 }
 
 type ModoRepetir = 'off' | 'lista' | 'una';
+type Motor = 'sdk' | 'audio' | null;
+
+// Tipos mínimos del SDK (sin any): solo lo que usa este módulo.
+interface SDKArtist {
+    name: string;
+}
+interface SDKAlbumArt {
+    url: string;
+}
+interface SDKCurrentTrack {
+    uri: string;
+    name: string;
+    artists: SDKArtist[];
+    album: { images: SDKAlbumArt[] };
+}
+interface SDKPlaybackState {
+    position: number;
+    duration: number;
+    paused: boolean;
+    track_window: { current_track: SDKCurrentTrack };
+}
+interface SDKReady {
+    device_id: string;
+}
+interface SDKError {
+    message: string;
+}
+interface SpotifyPlayerInstance {
+    connect(): Promise<boolean>;
+    disconnect(): void;
+    togglePlay(): Promise<void>;
+    seek(positionMs: number): Promise<void>;
+    setVolume(volume: number): Promise<void>;
+    getCurrentState(): Promise<SDKPlaybackState | null>;
+    addListener(event: 'ready' | 'not_ready', cb: (d: SDKReady) => void): boolean;
+    addListener(event: 'player_state_changed', cb: (s: SDKPlaybackState | null) => void): boolean;
+    addListener(
+        event: 'authentication_error' | 'account_error' | 'playback_error' | 'initialization_error',
+        cb: (e: SDKError) => void
+    ): boolean;
+}
+interface SpotifyPlayerCtor {
+    new (opciones: {
+        name: string;
+        getOAuthToken: (cb: (token: string) => void) => void;
+        volume: number;
+    }): SpotifyPlayerInstance;
+}
+
+declare global {
+    interface Window {
+        Spotify?: { Player: SpotifyPlayerCtor };
+        onSpotifyWebPlaybackSDKReady?: () => void;
+    }
+}
+
+function uriATrackId(uri: string): string {
+    return uri.split(':')[2] ?? '';
+}
+
+// Carga https://sdk.scdn.co/spotify-player.js una sola vez.
+let sdkPromise: Promise<void> | null = null;
+function cargarSDK(): Promise<void> {
+    if (typeof window === 'undefined') return Promise.reject(new Error('Sin ventana'));
+    if (window.Spotify) return Promise.resolve();
+    if (!sdkPromise) {
+        sdkPromise = new Promise<void>((resolve, reject) => {
+            const timer = window.setTimeout(() => {
+                sdkPromise = null;
+                reject(new Error('Timeout cargando el SDK'));
+            }, 15000);
+            window.onSpotifyWebPlaybackSDKReady = () => {
+                window.clearTimeout(timer);
+                resolve();
+            };
+            const script = document.createElement('script');
+            script.src = 'https://sdk.scdn.co/spotify-player.js';
+            script.async = true;
+            script.onerror = () => {
+                window.clearTimeout(timer);
+                sdkPromise = null;
+                reject(new Error('No se pudo cargar el SDK'));
+            };
+            document.body.appendChild(script);
+        });
+    }
+    return sdkPromise;
+}
 
 interface ReproductorCtx {
     actual: ColaItem | null;
@@ -60,6 +152,10 @@ const PORTADA_VACIA = '';
 export function PlayerProvider({ children }: { children: ReactNode }) {
     const { mostrarToast } = useToast();
     const audioRef = useRef<HTMLAudioElement | null>(null);
+    const playerRef = useRef<SpotifyPlayerInstance | null>(null);
+    const deviceIdRef = useRef<string | null>(null);
+    const ultimoUriRef = useRef<string | null>(null);
+    const ultimoPlayRef = useRef(false);
     const [cola, setCola] = useState<ColaItem[]>([]);
     const [indice, setIndice] = useState(-1);
     const [aleatorio, setAleatorio] = useState(false);
@@ -70,10 +166,143 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const [tiempoActual, setTiempoActual] = useState(0);
     const [tiempoTotal, setTiempoTotal] = useState(0);
     const [colaAbierta, setColaAbierta] = useState(false);
+    const [motor, setMotor] = useState<Motor>(null);
+    const [sinPremium, setSinPremium] = useState(false);
+    const [sdkPista, setSdkPista] = useState<{
+        nombre: string;
+        artista: string;
+        portada?: string;
+        uri: string;
+    } | null>(null);
 
-    const actual = indice >= 0 && indice < cola.length ? cola[indice] : null;
+    // Espejos para leer estado fresco dentro de listeners e intervalos.
+    const motorRef = useRef<Motor>(null);
+    const repetirRef = useRef<ModoRepetir>('off');
+    const siguienteRef = useRef<() => void>(() => {});
+    const volumenRef = useRef(0.7);
+    useEffect(() => {
+        motorRef.current = motor;
+        repetirRef.current = repetir;
+        volumenRef.current = volumen;
+    });
 
-    const reproducirIndice = useCallback(
+    // Lo que muestra la UI: pista del SDK si es el motor activo, si no la cola.
+    const actualCola = indice >= 0 && indice < cola.length ? cola[indice] : null;
+    const actual: ColaItem | null =
+        motor === 'sdk' && sdkPista
+            ? {
+                  previewUrl: '',
+                  nombre: sdkPista.nombre,
+                  artista: sdkPista.artista,
+                  portada: sdkPista.portada,
+                  trackId: uriATrackId(sdkPista.uri),
+                  uri: sdkPista.uri,
+              }
+            : actualCola;
+
+    // Crea el player SDK una vez (token fresco del backend) y lo conecta.
+    const asegurarSDK = useCallback(async (): Promise<boolean> => {
+        if (typeof window === 'undefined' || sinPremium) return false;
+        try {
+            await cargarSDK();
+            if (!window.Spotify) return false;
+            if (!playerRef.current) {
+                const player = new window.Spotify.Player({
+                    name: 'Spotify Clone',
+                    getOAuthToken: (cb) => {
+                        API.obtenerToken()
+                            .then((t) => cb(t.access_token))
+                            .catch(() => {
+                                // api.ts ya redirige al login con 401
+                            });
+                    },
+                    volume: volumenRef.current,
+                });
+                player.addListener('ready', ({ device_id }) => {
+                    deviceIdRef.current = device_id;
+                    // Reclama el dispositivo sin sonar (el play real lo transfiere).
+                    void API.transferirReproduccion(device_id, false).catch(() => {});
+                });
+                player.addListener('not_ready', () => {
+                    deviceIdRef.current = null;
+                });
+                player.addListener('player_state_changed', (s) => {
+                    if (!s) return;
+                    const t = s.track_window.current_track;
+                    setSdkPista({
+                        nombre: t.name,
+                        artista: t.artists.map((a) => a.name).join(', ') || 'Desconocido',
+                        portada: t.album.images[0]?.url,
+                        uri: t.uri,
+                    });
+                    if (!s.paused) ultimoPlayRef.current = true;
+                });
+                player.addListener('account_error', () => {
+                    setSinPremium(true);
+                    mostrarToast('La reproducción completa requiere Spotify Premium', 'error');
+                    try {
+                        player.disconnect();
+                    } catch {
+                        // noop: ya está desconectado
+                    }
+                    playerRef.current = null;
+                    deviceIdRef.current = null;
+                    setMotor('audio');
+                });
+                player.addListener('authentication_error', () => {
+                    mostrarToast('Spotify no autorizó la reproducción', 'error');
+                    try {
+                        player.disconnect();
+                    } catch {
+                        // noop: ya está desconectado
+                    }
+                    playerRef.current = null;
+                    deviceIdRef.current = null;
+                    setMotor('audio');
+                });
+                player.addListener('initialization_error', () => {
+                    mostrarToast('No se pudo iniciar el reproductor de Spotify', 'error');
+                });
+                player.addListener('playback_error', () => {
+                    mostrarToast('Error al reproducir en Spotify', 'error');
+                });
+                playerRef.current = player;
+            }
+            return await playerRef.current.connect();
+        } catch {
+            mostrarToast('No se pudo conectar con Spotify', 'error');
+            return false;
+        }
+    }, [mostrarToast, sinPremium]);
+
+    // Reproduce una URI en el dispositivo del SDK (con gracia para el ready).
+    const tocarEnSDK = useCallback(
+        async (uri: string): Promise<boolean> => {
+            if (!deviceIdRef.current) {
+                const ok = await asegurarSDK();
+                if (ok) {
+                    for (let i = 0; i < 30 && !deviceIdRef.current; i++) {
+                        await new Promise((r) => setTimeout(r, 100));
+                    }
+                }
+            }
+            const dev = deviceIdRef.current;
+            if (!dev) return false;
+            ultimoUriRef.current = uri;
+            try {
+                await API.reproducirEnDispositivo([uri], dev);
+                audioRef.current?.pause();
+                return true;
+            } catch {
+                mostrarToast('No se pudo reproducir en Spotify, usando preview', 'error');
+                return false;
+            }
+        },
+        [asegurarSDK, mostrarToast]
+    );
+
+    // Ruta de preview (<audio> de 30s), igual que antes del SDK.
+    const reproducirEnAudio = useCallback(
         (i: number, lista: ColaItem[]) => {
             if (i < 0 || i >= lista.length) return;
             const cancion = lista[i];
@@ -91,29 +320,44 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         [mostrarToast]
     );
 
+    // Decide el motor: SDK si hay URI (canción completa), si no preview.
+    const reproducirEnIndice = useCallback(
+        async (i: number, lista: ColaItem[]) => {
+            const item = lista[i];
+            if (!item) return;
+            setIndice(i);
+            const uri = item.uri ?? (item.trackId ? `spotify:track:${item.trackId}` : undefined);
+            if (uri && !sinPremium) {
+                setMotor('sdk');
+                if (await tocarEnSDK(uri)) return;
+                setMotor('audio');
+            } else {
+                setMotor('audio');
+            }
+            reproducirEnAudio(i, lista);
+        },
+        [sinPremium, tocarEnSDK, reproducirEnAudio]
+    );
+
     const reproducirPreview = useCallback(
         (previewUrl: string, nombre: string, artista: string, portada?: string, trackId?: string) => {
-            if (!previewUrl) {
+            const uri = trackId ? `spotify:track:${trackId}` : undefined;
+            if (!previewUrl && !uri) {
                 mostrarToast('Esta canción no tiene preview disponible', 'error');
                 return;
             }
-            setCola((prev) => {
-                const existente = prev.findIndex((c) => c.previewUrl === previewUrl);
-                if (existente !== -1) {
-                    setIndice(existente);
-                    const audio = audioRef.current;
-                    if (audio) {
-                        audio.src = previewUrl;
-                        void audio.play().catch(() => {});
-                    }
-                    return prev;
-                }
-                const next = [...prev, { previewUrl, nombre, artista, portada, trackId }];
-                reproducirIndice(next.length - 1, next);
-                return next;
-            });
+            const clave = (c: ColaItem) => c.trackId || c.previewUrl;
+            const nuevo: ColaItem = { previewUrl, nombre, artista, portada, trackId, uri };
+            const existente = cola.findIndex((c) => clave(c) === clave(nuevo));
+            if (existente !== -1) {
+                void reproducirEnIndice(existente, cola);
+                return;
+            }
+            const lista = [...cola, nuevo];
+            setCola(lista);
+            void reproducirEnIndice(lista.length - 1, lista);
         },
-        [mostrarToast, reproducirIndice]
+        [cola, mostrarToast, reproducirEnIndice]
     );
 
     const reproducirTrack = useCallback(
@@ -125,51 +369,47 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
                 portada ?? track.album?.images?.[0]?.url,
                 track.id
             );
+            // El Track trae su URI canónica: úsala si el SDK está disponible.
+            if (track.uri) {
+                setCola((prev) => {
+                    const idx = prev.findIndex((c) => c.trackId === track.id);
+                    if (idx === -1) return prev;
+                    const next = [...prev];
+                    next[idx] = { ...next[idx], uri: track.uri };
+                    return next;
+                });
+            }
         },
         [reproducirPreview]
     );
 
     const siguiente = useCallback(() => {
-        setCola((prev) => {
-            setIndice((cur) => {
-                if (aleatorio && prev.length > 1) {
-                    let nuevo = cur;
-                    while (nuevo === cur) nuevo = Math.floor(Math.random() * prev.length);
-                    reproducirIndice(nuevo, prev);
-                    return nuevo;
-                }
-                if (cur < prev.length - 1) {
-                    reproducirIndice(cur + 1, prev);
-                    return cur + 1;
-                }
-                if (repetir === 'lista' && prev.length > 0) {
-                    reproducirIndice(0, prev);
-                    return 0;
-                }
-                return cur;
-            });
-            return prev;
-        });
-    }, [aleatorio, repetir, reproducirIndice]);
+        if (cola.length === 0) return;
+        let nuevo = indice;
+        if (aleatorio && cola.length > 1) {
+            nuevo = indice;
+            while (nuevo === indice) nuevo = Math.floor(Math.random() * cola.length);
+        } else if (indice < cola.length - 1) {
+            nuevo = indice + 1;
+        } else if (repetir === 'lista') {
+            nuevo = 0;
+        } else {
+            return;
+        }
+        void reproducirEnIndice(nuevo, cola);
+    }, [cola, indice, aleatorio, repetir, reproducirEnIndice]);
 
     const anterior = useCallback(() => {
-        setCola((prev) => {
-            setIndice((cur) => {
-                if (cur > 0) {
-                    reproducirIndice(cur - 1, prev);
-                    return cur - 1;
-                }
-                if (cur === 0 && prev.length > 0) {
-                    reproducirIndice(0, prev);
-                    return 0;
-                }
-                return cur;
-            });
-            return prev;
-        });
-    }, [reproducirIndice]);
+        if (cola.length === 0) return;
+        if (indice > 0) void reproducirEnIndice(indice - 1, cola);
+        else if (indice === 0) void reproducirEnIndice(0, cola);
+    }, [cola, indice, reproducirEnIndice]);
 
     const togglePlay = useCallback(() => {
+        if (motorRef.current === 'sdk' && playerRef.current) {
+            void playerRef.current.togglePlay().catch(() => {});
+            return;
+        }
         const audio = audioRef.current;
         if (!audio || cola.length === 0) return;
         if (audio.paused) void audio.play().catch(() => {});
@@ -178,18 +418,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
     const toggleCola = useCallback(() => setColaAbierta((v) => !v), []);
 
-    const irAIndice = useCallback(
-        (i: number) => reproducirIndice(i, cola),
-        [cola, reproducirIndice]
-    );
+    const irAIndice = useCallback((i: number) => void reproducirEnIndice(i, cola), [cola, reproducirEnIndice]);
 
     const reproducirCola = useCallback(
         (items: ColaItem[], inicio = 0) => {
             if (items.length === 0) return;
             setCola(items);
-            reproducirIndice(inicio, items);
+            void reproducirEnIndice(inicio, items);
         },
-        [reproducirIndice]
+        [reproducirEnIndice]
     );
 
     const toggleAleatorio = useCallback(() => setAleatorio((v) => !v), []);
@@ -202,20 +439,38 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         setVolumenState(v);
         const audio = audioRef.current;
         if (audio) audio.volume = v;
+        if (playerRef.current) void playerRef.current.setVolume(v).catch(() => {});
     }, []);
 
     const toggleMute = useCallback(() => {
         setMuted((m) => {
             const audio = audioRef.current;
             if (audio) audio.muted = !m;
+            if (playerRef.current) void playerRef.current.setVolume(!m ? 0 : volumen).catch(() => {});
             return !m;
         });
-    }, []);
+    }, [volumen]);
 
-    const seek = useCallback((fraccion: number) => {
-        const audio = audioRef.current;
-        if (audio && Number.isFinite(audio.duration)) audio.currentTime = fraccion * audio.duration;
-    }, []);
+    const seek = useCallback(
+        (fraccion: number) => {
+            if (motorRef.current === 'sdk' && playerRef.current && Number.isFinite(tiempoTotal)) {
+                void playerRef.current.seek(Math.round(fraccion * tiempoTotal * 1000)).catch(() => {});
+                return;
+            }
+            const audio = audioRef.current;
+            if (audio && Number.isFinite(audio.duration)) audio.currentTime = fraccion * audio.duration;
+        },
+        [tiempoTotal]
+    );
+
+    // Espejos para leer estado fresco dentro de listeners, intervalos y
+    // atajos sin re-suscribirlos a cada render.
+    useEffect(() => {
+        motorRef.current = motor;
+        repetirRef.current = repetir;
+        siguienteRef.current = siguiente;
+        volumenRef.current = volumen;
+    });
 
     // Volumen inicial 70% (como el legacy)
     useEffect(() => {
@@ -223,16 +478,35 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         if (audio) audio.volume = 0.7;
     }, []);
 
-    // Eventos del audio + atajo Espacio (misma lógica que reproductor.js)
+    // Desconecta el SDK al desmontar la app.
+    useEffect(
+        () => () => {
+            try {
+                playerRef.current?.disconnect();
+            } catch {
+                // noop: ya está desconectado
+            }
+        },
+        []
+    );
+
+    // Eventos del <audio> (modo preview) + atajo Espacio (ambos motores).
     useEffect(() => {
         const audio = audioRef.current;
         if (!audio) return;
 
-        const onPlay = () => setReproduciendo(true);
-        const onPause = () => setReproduciendo(false);
+        const onPlay = () => {
+            if (motorRef.current === 'sdk') return;
+            setReproduciendo(true);
+        };
+        const onPause = () => {
+            if (motorRef.current === 'sdk') return;
+            setReproduciendo(false);
+        };
         const onTime = () => setTiempoActual(audio.currentTime || 0);
         const onMeta = () => setTiempoTotal(audio.duration || 0);
         const onEnded = () => {
+            if (motorRef.current === 'sdk') return;
             if (repetir === 'una') {
                 audio.currentTime = 0;
                 void audio.play().catch(() => {});
@@ -247,13 +521,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
                 t instanceof HTMLElement &&
                 (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
             if (esCampo) return;
-            setCola((prev) => {
-                if (prev.length === 0) return prev;
+            if (motorRef.current === 'sdk' && playerRef.current) {
                 e.preventDefault();
-                if (audio.paused) void audio.play().catch(() => {});
-                else audio.pause();
-                return prev;
-            });
+                void playerRef.current.togglePlay().catch(() => {});
+                return;
+            }
+            if (cola.length === 0) return;
+            e.preventDefault();
+            if (audio.paused) void audio.play().catch(() => {});
+            else audio.pause();
         };
 
         audio.addEventListener('play', onPlay);
@@ -270,7 +546,42 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             audio.removeEventListener('ended', onEnded);
             document.removeEventListener('keydown', onTecla);
         };
-    }, [repetir, siguiente]);
+    }, [repetir, siguiente, cola.length]);
+
+    // Progreso en modo SDK: el SDK no emite tiempo cada segundo, se sondea.
+    // También detecta fin de pista para repeat-una o avanzar en la cola.
+    useEffect(() => {
+        if (motor !== 'sdk') return;
+        const id = window.setInterval(() => {
+            const pl = playerRef.current;
+            if (!pl) return;
+            void pl
+                .getCurrentState()
+                .then((s) => {
+                    if (!s) return;
+                    setTiempoActual(Math.floor(s.position / 1000));
+                    setTiempoTotal(Math.floor(s.duration / 1000));
+                    setReproduciendo(!s.paused);
+                    if (!s.paused) {
+                        ultimoPlayRef.current = true;
+                        return;
+                    }
+                    if (ultimoPlayRef.current && s.position < 2000) {
+                        ultimoPlayRef.current = false;
+                        if (repetirRef.current === 'una') {
+                            const u = ultimoUriRef.current;
+                            if (u) void tocarEnSDK(u);
+                        } else {
+                            siguienteRef.current();
+                        }
+                    }
+                })
+                .catch(() => {
+                    // Sin estado (pista externa o pausa): se reintenta solo
+                });
+        }, 500);
+        return () => window.clearInterval(id);
+    }, [motor, tocarEnSDK]);
 
     const value = useMemo<ReproductorFull>(
         () => ({

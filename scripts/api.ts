@@ -41,6 +41,10 @@ export interface BuscarResultado {
     playlists?: { items: PlaylistRef[] };
 }
 
+export interface TokenRespuesta {
+    access_token: string;
+}
+
 export interface NuevoFavorito {
     trackId: string;
     nombre: string;
@@ -76,6 +80,20 @@ export const API = {
     quitarFavorito: (idTrack: string) =>
         pedir<{ ok: boolean }>(`/api/favoritos/${encodeURIComponent(idTrack)}`, {
             method: 'DELETE',
+        }),
+    // Web Playback SDK: token fresco + control de reproducción en un dispositivo
+    obtenerToken: () => pedir<TokenRespuesta>('/api/token'),
+    reproducirEnDispositivo: (uris: string[], deviceId?: string) =>
+        pedir<{ ok: boolean }>('/api/player/play', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ uris, device_id: deviceId ?? null }),
+        }),
+    transferirReproduccion: (deviceId: string, play = false) =>
+        pedir<{ ok: boolean }>('/api/player/transfer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ device_id: deviceId, play }),
         }),
 };
 

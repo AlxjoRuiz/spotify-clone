@@ -6,7 +6,7 @@
 2. El frontend React consume las rutas `/api/*` del backend; el token nunca se expone al navegador.
 3. El backend consulta Spotify para búsqueda, perfil, playlists, álbumes y estadísticas.
 4. Supabase conserva el usuario, sus tokens renovables y sus canciones favoritas.
-5. El reproductor usa las vistas previas públicas que devuelve Spotify; no reproduce el catálogo completo.
+5. El reproductor usa el Web Playback SDK (canción completa, requiere Premium); sin Premium, URI o dispositivo usa los previews de 30s como fallback.
 
 Las playlists se abren dentro de esta aplicación. El enlace a Spotify solo se usa cuando un componente lo pide explícitamente.
 
@@ -49,7 +49,7 @@ La búsqueda acepta términos de hasta 100 caracteres y las llamadas a Spotify t
 | `scripts/sesion.ts` | Nombre mostrado del usuario y cierre de sesión. |
 | `scripts/navegacion.tsx` | Estado de vistas, búsquedas y botones atrás/adelante. |
 | `scripts/estado.tsx` | Estado global y sincronización de canciones favoritas. |
-| `scripts/reproductor.tsx` | Reproductor de previews, cola, volumen, aleatorio y repetición. |
+| `scripts/reproductor.tsx` | Reproductor Web Playback SDK (completo con Premium, fallback a previews), cola con drawer, volumen, aleatorio y repetición. |
 | `scripts/componentes.tsx` | Tarjetas, listas de canciones, loaders y mensajes reutilizables. |
 | `scripts/vistas/` | Pantallas de Inicio, Explorar, Biblioteca, Perfil, álbum, artista y playlist. |
 | `scripts/tipos.ts` | Tipos TypeScript de datos provenientes de Spotify y Supabase. |

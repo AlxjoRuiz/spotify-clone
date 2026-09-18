@@ -10,6 +10,7 @@ export interface Track {
     id: string;
     name: string;
     preview_url: string | null;
+    uri?: string;
     duration_ms?: number;
     artists?: { name: string }[];
     album?: { images?: SpotifyImage[] };
