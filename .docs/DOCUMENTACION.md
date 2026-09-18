@@ -27,6 +27,9 @@ Si Supabase falla, el login de Spotify continúa, pero favoritos y renovación p
 | `/api/canciones`, `/api/top-*`, `/api/perfil` | Datos personales de Spotify |
 | `/api/buscar`, `/api/explorar`, `/api/playlists-*`, `/api/album/*`, `/api/artistas/*` | Catálogo y detalles |
 | `/api/favoritos` | Crear, listar y borrar favoritos en Supabase |
+| `/api/token`, `/api/player/*` | Token fresco y control de reproducción para el Web Playback SDK |
+
+Los scopes incluyen `streaming` y control del reproductor: después de este cambio hay que volver a iniciar sesión para autorizar los permisos nuevos.
 
 Todas las rutas `/api` requieren una sesión de Spotify. Si expira, el frontend recibe `401` y vuelve al login.
 

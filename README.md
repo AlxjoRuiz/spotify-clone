@@ -29,6 +29,8 @@ npm start              # backend en http://localhost:3000
 
 Abrí `http://127.0.0.1:3000/pages/login.html` (debe usar el mismo host que `SPOTIFY_REDIRECT_URI`; no alternes entre `localhost` y `127.0.0.1`).
 
+> Si ya habías iniciado sesión antes, volvé a entrar: los permisos nuevos de reproducción (`streaming`) requieren autorizarlos de nuevo.
+
 Desarrollo del frontend (hot reload): `npm run dev` → `http://localhost:5173`. El botón de login inicia OAuth directamente en `127.0.0.1:3000` para conservar la cookie de sesión del callback.
 
 > `npm start` corre el backend con `tsx` solo para resolver `lib/` en TS;

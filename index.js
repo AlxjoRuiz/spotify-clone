@@ -58,7 +58,7 @@ app.use(session({
 }));
 
 // playlist-read-private permite listar las playlists del usuario (Biblioteca)
-const SCOPE_SPOTIFY = 'user-read-private user-read-email user-read-recently-played user-top-read playlist-read-private playlist-read-collaborative';
+const SCOPE_SPOTIFY = 'user-read-private user-read-email user-read-recently-played user-top-read playlist-read-private playlist-read-collaborative streaming user-read-playback-state user-modify-playback-state user-read-currently-playing';
 const RANGOS_DE_TIEMPO = ['short_term', 'medium_term', 'long_term'];
 
 // Helpers de Supabase: el cliente oficial vive en lib/supabase.ts y trabaja
@@ -118,6 +118,8 @@ app.get('/auth/spotify/callback', async (req, res) => {
         const accessToken = tokenResponse.data.access_token;
         const refreshToken = tokenResponse.data.refresh_token;
         req.session.spotify_access_token = accessToken;
+        // Vencimiento para el SDK: el token dura ~1h; /api/token lo renueva antes.
+        req.session.spotify_expires_at = Date.now() + (tokenResponse.data.expires_in || 3600) * 1000;
 
         // 2) Pregunta a Spotify quién es el dueño del token
         const perfilResponse = await spotifyHttp.get('https://api.spotify.com/v1/me', {
@@ -240,39 +242,58 @@ async function renovarAccessTokenSpotify(userId) {
             refresh_token_spotify: response.data.refresh_token ?? refreshToken
         }, 'user_id');
 
-        return nuevoToken;
+        return { token: nuevoToken, expiresAt: Date.now() + (response.data.expires_in || 3600) * 1000 };
     } catch (error) {
         console.error('Error al renovar token:', error.response?.data || error.message);
         return null;
     }
 }
 
-// Petición GET a Spotify con auto-renovación: si responde 401, renueva el token y reintenta
-async function pedirASpotify(url, req) {
-    let token = req.session.spotify_access_token;
+// Petición a Spotify con auto-renovación: si responde 401, renueva el token y reintenta.
+// Por defecto GET; con opciones { method, params, data } sirve para PUT/POST del player.
+async function pedirASpotify(url, req, opciones = {}) {
+    const { method = 'get', params = undefined, data = undefined } = opciones;
+    const hacer = (token) => spotifyHttp.request({
+        method, url, params, data,
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const token = req.session.spotify_access_token;
 
     try {
-        const response = await spotifyHttp.get(url, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const response = await hacer(token);
         return response.data;
 
     } catch (error) {
         if (error.response?.status === 401) {
             const userId = req.session.spotify_user?.id;
-            const tokenNuevo = userId ? await renovarAccessTokenSpotify(userId) : null;
+            const renovado = userId ? await renovarAccessTokenSpotify(userId) : null;
 
-            if (tokenNuevo) {
-                req.session.spotify_access_token = tokenNuevo;
+            if (renovado) {
+                req.session.spotify_access_token = renovado.token;
+                req.session.spotify_expires_at = renovado.expiresAt;
 
-                const reintento = await spotifyHttp.get(url, {
-                    headers: { 'Authorization': `Bearer ${tokenNuevo}` }
-                });
+                const reintento = await hacer(renovado.token);
                 return reintento.data;
             }
         }
         throw error;
     }
+}
+
+// Token listo para el Web Playback SDK: si vence en menos de 1 minuto lo
+// renueva antes (el SDK no espera al 401 como el resto de la API).
+async function tokenFresco(req) {
+    const expiraEn = (req.session.spotify_expires_at || 0) - Date.now();
+    if (req.session.spotify_access_token && expiraEn > 60_000) {
+        return req.session.spotify_access_token;
+    }
+    const userId = req.session.spotify_user?.id;
+    if (!userId) return null;
+    const renovado = await renovarAccessTokenSpotify(userId);
+    if (!renovado) return null;
+    req.session.spotify_access_token = renovado.token;
+    req.session.spotify_expires_at = renovado.expiresAt;
+    return renovado.token;
 }
 
 // Normaliza el parámetro time_range (evita valores inválidos)
@@ -509,6 +530,55 @@ app.get('/api/artistas/:id', async (req, res) => {
     } catch (error) {
         console.error(error.response?.data || error.message);
         res.status(500).json({ error: 'No se pudo obtener el artista' });
+    }
+});
+
+// REPRODUCTOR WEB (Web Playback SDK del frontend)
+
+// Token fresco para el SDK (lo pide al conectar y al reautenticar)
+app.get('/api/token', async (req, res) => {
+    try {
+        const token = await tokenFresco(req);
+        if (!token) return res.status(401).json({ error: 'No autorizado' });
+        res.json({ access_token: token });
+    } catch (error) {
+        console.error(error.response?.data || error.message);
+        res.status(500).json({ error: 'No se pudo obtener el token' });
+    }
+});
+
+// Inicia la reproducción en un dispositivo (el SDK pasa su device_id)
+app.post('/api/player/play', async (req, res) => {
+    try {
+        const { uris, device_id } = req.body || {};
+        if (!uris || !Array.isArray(uris) || uris.length === 0) {
+            return res.status(400).json({ error: 'Faltan uris para reproducir' });
+        }
+        await pedirASpotify('https://api.spotify.com/v1/me/player/play', req, {
+            method: 'put',
+            params: device_id ? { device_id } : undefined,
+            data: { uris }
+        });
+        res.json({ ok: true });
+    } catch (error) {
+        console.error(error.response?.data || error.message);
+        res.status(500).json({ error: 'No se pudo iniciar la reproducción' });
+    }
+});
+
+// Transfiere la reproducción al dispositivo del SDK
+app.post('/api/player/transfer', async (req, res) => {
+    try {
+        const { device_id, play } = req.body || {};
+        if (!device_id) return res.status(400).json({ error: 'Falta device_id' });
+        await pedirASpotify('https://api.spotify.com/v1/me/player', req, {
+            method: 'put',
+            data: { device_ids: [device_id], play: play ?? false }
+        });
+        res.json({ ok: true });
+    } catch (error) {
+        console.error(error.response?.data || error.message);
+        res.status(500).json({ error: 'No se pudo transferir la reproducción' });
     }
 });
 
