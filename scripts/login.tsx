@@ -9,11 +9,11 @@ import videoUrl from '../assets/video/video.mp4';
 // HTML, misma UI y comportamiento: video, logo con glow, botón /auth/spotify
 // y error cuando el callback vuelve con ?error=).
 function LoginPage() {
-    // Vite corre en :5173, pero Spotify vuelve a :3000. Iniciar OAuth
+    // Vite corre en :5173, pero Spotify vuelve al backend (puerto 80). Iniciar OAuth
     // directamente en el backend conserva la cookie de sesión en el mismo
     // host que recibirá el callback (evita el error de `state`).
     const urlLoginSpotify =
-        window.location.port === '5173' ? 'http://127.0.0.1:3000/auth/spotify' : '/auth/spotify';
+        window.location.port === '5173' ? 'http://127.0.0.1/auth/spotify' : '/auth/spotify';
     const tieneError = useMemo(
         () => new URLSearchParams(window.location.search).has('error'),
         []

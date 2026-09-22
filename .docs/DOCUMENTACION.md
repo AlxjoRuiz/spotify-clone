@@ -16,7 +16,7 @@ Las playlists se abren dentro de esta aplicación. El enlace a Spotify solo se u
 - `GET /auth/spotify/callback`: comprueba ese `state`, cambia el `code` por tokens y persiste los datos en Supabase.
 - `GET /auth/logout`: destruye la sesión.
 
-En local, `localhost` y `127.0.0.1` no comparten cookies. Usá siempre el host registrado en `SPOTIFY_REDIRECT_URI`; la configuración incluida usa `http://127.0.0.1:3000`.
+En local, `localhost` y `127.0.0.1` no comparten cookies. Usá siempre el host registrado en `SPOTIFY_REDIRECT_URI`; la configuración incluida usa `http://127.0.0.1`.
 
 Si Supabase falla, el login de Spotify continúa, pero favoritos y renovación persistente de tokens quedan deshabilitados hasta corregir Supabase.
 
