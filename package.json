@@ -4,7 +4,7 @@
   "private": true,
   "description": "Clon de Spotify: login OAuth, dashboard React+TS+Tailwind, backend Express JS y Supabase",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host 127.0.0.1",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "start": "tsx index.js",

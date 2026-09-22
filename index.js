@@ -664,6 +664,8 @@ app.use((error, req, res, next) => {
     res.status(500).json({ error: 'Error interno del servidor' });
 });
 
+// URL unificada del proyecto: siempre 127.0.0.1 (el puerto 80 se omite).
+const HOST_URL = Number(PORT) === 80 ? 'http://127.0.0.1' : `http://127.0.0.1:${PORT}`;
 app.listen(PORT, () => {
-    console.log(`Servidor corriendo en http://localhost:${PORT}`);
+    console.log(`Servidor corriendo en ${HOST_URL}`);
 });
