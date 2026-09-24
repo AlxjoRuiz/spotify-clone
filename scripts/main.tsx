@@ -49,14 +49,13 @@ function Sidebar() {
                     }}
                     onFocus={recargarSugerencias}
                     placeholder="Buscar canciones..."
-                    className="flex-1 border-none bg-transparent py-1.5 font-['Poppins',sans-serif] text-[0.9rem] text-white outline-none placeholder:text-[#B3B3B3]"
+                    className="min-w-0 flex-1 border-none bg-transparent py-1.5 font-['Poppins',sans-serif] text-[0.9rem] text-white outline-none placeholder:text-[#B3B3B3]"
                 />
                 <button
                     id="btn-buscar"
                     onClick={() => ejecutar(texto)}
                     title="Buscar"
-                    aria-label="Buscar"
-                    className="flex h-[30px] w-[30px] items-center justify-center rounded-full border-none bg-[#1DB954] font-['Poppins',sans-serif] text-[0.85rem] text-black transition-all hover:scale-110 hover:bg-[#1ed760]"
+                    className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full border-none bg-[#1DB954] font-['Poppins',sans-serif] text-[0.85rem] text-black transition-all hover:scale-110 hover:bg-[#1ed760]"
                 >
                     <i className="fa-solid fa-magnifying-glass"></i>
                 </button>
