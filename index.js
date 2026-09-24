@@ -351,17 +351,19 @@ app.get('/api/playlists-populares', async (req, res) => {
     }
 });
 
-// Contenido inicial de Explorar: playlists destacadas + lanzamientos recientes
+// Contenido inicial de Explorar: playlists destacadas + lanzamientos recientes + tus canciones
 app.get('/api/explorar', async (req, res) => {
     try {
-        const [destacadas, lanzamientos] = await Promise.all([
+        const [destacadas, lanzamientos, top] = await Promise.all([
             pedirASpotify('https://api.spotify.com/v1/browse/featured-playlists?limit=8&market=CO', req),
-            pedirASpotify('https://api.spotify.com/v1/browse/new-releases?limit=8&market=CO', req)
+            pedirASpotify('https://api.spotify.com/v1/browse/new-releases?limit=8&market=CO', req),
+            pedirASpotify('https://api.spotify.com/v1/me/top/tracks?limit=8', req)
         ]);
 
         res.json({
             playlists: destacadas.playlists?.items ?? [],
-            nuevos: lanzamientos.albums?.items ?? []
+            nuevos: lanzamientos.albums?.items ?? [],
+            top: top.items ?? []
         });
 
     } catch (error) {

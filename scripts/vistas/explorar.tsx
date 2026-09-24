@@ -5,7 +5,7 @@ import { AlbumCard, ArtistCard, ErrorCarga, GridTarjetas, PlaylistCard, Seccion,
 import { DetalleAlbum } from './album';
 import { DetallePlaylist } from './playlist';
 import { DetalleArtista } from './artista';
-import type { Artist, PlaylistRef } from '../tipos';
+import type { Artist, PlaylistRef, Track } from '../tipos';
 
 // Vista Explorar — mismo archivo que vistas/explorar.js: contenido inicial
 // (destacadas + lanzamientos) y resultados de búsqueda (antes en busqueda.js).
@@ -22,7 +22,9 @@ export function Explorar() {
 
 function ExplorarInicial({ nonce }: { nonce: number }) {
     const [estado, setEstado] = useState<
-        { status: 'cargando' } | { status: 'ok'; playlists: PlaylistRef[]; nuevos: Artist[] } | { status: 'error' }
+        | { status: 'cargando' }
+        | { status: 'ok'; playlists: PlaylistRef[]; nuevos: Artist[]; top: Track[] }
+        | { status: 'error' }
     >({ status: 'cargando' });
 
     useEffect(() => {
@@ -30,7 +32,13 @@ function ExplorarInicial({ nonce }: { nonce: number }) {
         setEstado({ status: 'cargando' });
         API.explorar()
             .then((data) => {
-                if (vivo) setEstado({ status: 'ok', playlists: data.playlists || [], nuevos: data.nuevos || [] });
+                if (vivo)
+                    setEstado({
+                        status: 'ok',
+                        playlists: data.playlists || [],
+                        nuevos: data.nuevos || [],
+                        top: data.top || [],
+                    });
             })
             .catch((error) => {
                 console.error('Error al cargar Explorar:', error);
@@ -65,7 +73,16 @@ function ExplorarInicial({ nonce }: { nonce: number }) {
                     </GridTarjetas>
                 </Seccion>
             )}
-            {estado.playlists.length === 0 && estado.nuevos.length === 0 && (
+            {estado.top.length > 0 && (
+                <Seccion titulo="Canciones para vos">
+                    <GridTarjetas>
+                        {estado.top.map((t) => (
+                            <TrackCard key={t.id} track={t} />
+                        ))}
+                    </GridTarjetas>
+                </Seccion>
+            )}
+            {estado.playlists.length === 0 && estado.nuevos.length === 0 && estado.top.length === 0 && (
                 <SinResultados texto="No hay contenido para mostrar por ahora. Buscá tu música en el buscador." />
             )}
         </>

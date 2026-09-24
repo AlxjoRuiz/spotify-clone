@@ -57,7 +57,7 @@ export const API = {
     // Cada método representa una ruta del backend y devuelve datos ya tipados;
     // las vistas no construyen URLs ni manejan fetch directamente.
     playlistsPopulares: () => pedir<{ playlists: PlaylistRef[] }>('/api/playlists-populares'),
-    explorar: () => pedir<{ playlists: PlaylistRef[]; nuevos: Artist[] }>('/api/explorar'),
+    explorar: () => pedir<{ playlists: PlaylistRef[]; nuevos: Artist[]; top: Track[] }>('/api/explorar'),
     misPlaylists: () => pedir<{ playlists: PlaylistRef[] }>('/api/mis-playlists'),
     playlistTracks: (idPlaylist: string) =>
         pedir<PlaylistDetalle>(`/api/playlists/${idPlaylist}/tracks`),
