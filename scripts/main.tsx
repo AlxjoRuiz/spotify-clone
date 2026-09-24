@@ -5,7 +5,7 @@ import '../styles/index.css';
 import './sesion';
 import { API } from './api';
 import { saludoSegunHora } from './utils';
-import { cerrarSesion, nombreUsuario } from './sesion';
+import { nombreUsuario } from './sesion';
 import { ToastProvider } from './notificacion';
 import { FavoritosProvider } from './estado';
 import { PlayerProvider, Reproductor, ColaDrawer } from './reproductor';
@@ -149,15 +149,15 @@ function Header() {
                 <span id="nombre-perfil" className="max-[480px]:hidden">
                     {nombreUsuario}
                 </span>
-                <button
+                <a
                     id="btn-logout"
-                    onClick={cerrarSesion}
+                    href="/auth/logout"
                     title="Cerrar sesión"
                     aria-label="Cerrar sesión"
                     className="ml-1 border-none bg-transparent p-0.5 text-[0.85rem] text-[#616161] transition-colors hover:text-black"
                 >
                     <i className="fa-solid fa-right-from-bracket"></i>
-                </button>
+                </a>
             </div>
         </header>
     );
