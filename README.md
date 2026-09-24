@@ -24,14 +24,14 @@ Aplicación web que conecta una cuenta de Spotify mediante OAuth, muestra conten
 npm install
 cp .env.example .env   # completalo (ver abajo)
 npm run build          # frontend React -> dist/
-npm start              # backend en http://127.0.0.1 (puerto 80)
+npm start              # backend en http://127.0.0.1:3000
 ```
 
-Abrí `http://127.0.0.1/pages/login.html` (debe usar el mismo host que `SPOTIFY_REDIRECT_URI`; no alternes entre `localhost` y `127.0.0.1`).
+Abrí `http://127.0.0.1:3000/pages/login.html` (debe usar el mismo host que `SPOTIFY_REDIRECT_URI`; no alternes entre `localhost` y `127.0.0.1`).
 
 > Si ya habías iniciado sesión antes, volvé a entrar: los permisos nuevos de reproducción (`streaming`) requieren autorizarlos de nuevo.
 
-Desarrollo del frontend (hot reload): `npm run dev` → `http://127.0.0.1:5173` (el dev sí lleva puerto). El botón de login inicia OAuth directamente en `127.0.0.1` para conservar la cookie de sesión del callback.
+Desarrollo del frontend (hot reload): `npm run dev` → `http://127.0.0.1:5173`. El botón de login inicia OAuth directamente en `127.0.0.1:3000` para conservar la cookie de sesión del callback.
 
 > `npm start` corre el backend con `tsx` solo para resolver `lib/` en TS;
 > `index.js` sigue siendo JavaScript puro con `require()`.
@@ -43,7 +43,7 @@ Desarrollo del frontend (hot reload): `npm run dev` → `http://127.0.0.1:5173` 
 | Variable | Dónde se consigue |
 |---|---|
 | `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` | Spotify Dashboard → tu app → Settings |
-| `SPOTIFY_REDIRECT_URI` | Debe ser **idéntica** a la registrada en Spotify Dashboard → Settings → Redirect URIs (ej: `http://127.0.0.1/auth/spotify/callback`) |
+| `SPOTIFY_REDIRECT_URI` | Debe ser **idéntica** a la registrada en Spotify Dashboard → Settings → Redirect URIs (ej: `http://127.0.0.1:3000/auth/spotify/callback`) |
 | `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API |
 | `SESSION_SECRET` | Cualquier string largo aleatorio (firma la cookie de sesión) |
 | `NODE_ENV` | `development` localmente; `production` en el hosting para cookies seguras |
