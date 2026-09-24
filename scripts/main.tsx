@@ -34,7 +34,7 @@ function Sidebar() {
 
     return (
         <aside className="flex flex-col gap-2 overflow-y-auto bg-black p-4 px-3 text-white md:col-start-1 md:row-[1/4] max-md:order-2 max-md:px-4 max-md:py-3">
-            <h2 className="mx-3 mb-4 mt-2 flex items-center gap-2 text-[1.5rem] max-md:hidden">
+            <h2 className="mx-3 mb-4 mt-2 flex items-center gap-2 font-['Poppins',sans-serif] text-[1.5rem] font-extrabold tracking-tight max-md:hidden">
                 <i className="fa-brands fa-spotify text-[1.9rem] text-[#1DB954]"></i> Spotify
             </h2>
 

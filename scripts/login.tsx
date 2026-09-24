@@ -36,7 +36,7 @@ function LoginPage() {
                     className="mx-auto mb-4 w-[72px] animate-[glow_2.2s_ease-in-out_infinite]"
                 />
                 <p className="mb-2 text-[0.7rem] font-bold uppercase tracking-[0.3em] text-[#1DB954]">
-                    Spotify Clone
+                    Spotify
                 </p>
                 <h1 className="font-['Poppins',sans-serif] text-[2rem] font-black leading-tight">
                     Música sin límites
