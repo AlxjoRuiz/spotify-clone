@@ -19,6 +19,28 @@ body {
     }
 }
 
+/* Flote suave de los glows y entrada de la card del login.
+   Tailwind no define estos keyframes: van acá y se usan vía animate-[...]. */
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-14px);
+    }
+}
+
+@keyframes fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
 /* Barras de progreso/volumen (era #barra-progreso/#barra-volumen).
    Tailwind no estiliza thumbs de range: van acá. */
 input[type="range"].slider {
