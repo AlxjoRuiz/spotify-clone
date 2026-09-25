@@ -7,7 +7,7 @@ const path = require('path');
 const express = require('express');
 const session = require('express-session'); // Mantiene al usuario logueado y el token en memoria
 const axios = require('axios');             // Peticiones HTTP a Spotify
-const { upsertSupabaseTable, leerSupabase, borrarSupabase } = require('./lib/supabase'); // Supabase SDK (mismas tablas de la migración 0001)
+const { upsertUsuario, guardarTokens, leerPerfilPorUsuario, listarFavoritos, agregarFavorito, quitarFavorito } = require('./lib/supabase'); // Helpers por tabla (mismas tablas de la migración 0001)
 const { cifrarToken, descifrarTokenSeguro } = require('./lib/crypto'); // Los tokens se guardan cifrados en Supabase
 
 const app = express();
@@ -155,20 +155,19 @@ app.get('/auth/spotify/callback', async (req, res) => {
         // está caído o mal configurado, no debemos rechazar un OAuth válido de
         // Spotify (supabase-js reporta ese caso como "TypeError: fetch failed").
         try {
-            const userRows = await upsertSupabaseTable('users', {
+            const userRows = await upsertUsuario({
                 spotify_id: perfilSpotify.id,
                 display_name: perfilSpotify.display_name ?? null,
                 email: perfilSpotify.email ?? null
-            }, 'spotify_id');
+            });
 
             const user = userRows?.[0] ?? null;
 
             if (user) {
-                const profileRows = await upsertSupabaseTable('user_profiles', {
-                    user_id: user.id,
+                const profileRows = await guardarTokens(user.id, {
                     token_spotify: cifrarToken(accessToken),
                     refresh_token_spotify: refreshToken ? cifrarToken(refreshToken) : null
-                }, 'user_id');
+                });
                 const profile = profileRows?.[0] ?? null;
 
                 // `users.id` permite renovar el token; `user_profiles.id` se usa
@@ -245,7 +244,7 @@ app.get('/pages/dashboard.html', verificarLogin, (req, res) => {
 // Usa el refresh_token guardado en Supabase para pedirle a Spotify un access_token nuevo
 async function renovarAccessTokenSpotify(userId) {
     try {
-        const filas = await leerSupabase('user_profiles', { user_id: userId });
+        const filas = await leerPerfilPorUsuario(userId);
         // Las filas viejas pueden estar en texto plano: se aceptan una vez y
         // al renovar ya quedan cifradas.
         const refreshToken = descifrarTokenSeguro(filas?.[0]?.refresh_token_spotify);
@@ -264,11 +263,10 @@ async function renovarAccessTokenSpotify(userId) {
         // Spotify a veces rota el refresh_token; si no manda uno nuevo, conserva el viejo.
         // Ambos se guardan cifrados (refreshToken ya viene descifrado de arriba).
         const refreshNuevo = response.data.refresh_token ?? refreshToken;
-        await upsertSupabaseTable('user_profiles', {
-            user_id: userId,
+        await guardarTokens(userId, {
             token_spotify: cifrarToken(nuevoToken),
             refresh_token_spotify: cifrarToken(refreshNuevo)
-        }, 'user_id');
+        });
 
         return { token: nuevoToken, expiresAt: Date.now() + (response.data.expires_in || 3600) * 1000 };
     } catch (error) {
@@ -626,14 +624,14 @@ app.post('/api/favoritos', async (req, res) => {
         }
 
         // Si ya existe (mismo perfil + track), se actualiza; si no, se crea
-        await upsertSupabaseTable('favoritos', {
+        await agregarFavorito({
             user_profile_id: userProfileId,
             track_id: trackId,
             track_nombre: nombre,
             track_artista: artista,
             track_imagen: imagen,
             track_preview: preview
-        }, 'user_profile_id,track_id');
+        });
 
         res.json({ ok: true });
 
@@ -649,7 +647,7 @@ app.get('/api/favoritos', async (req, res) => {
         const userProfileId = obtenerUserProfileId(req);
         if (!userProfileId) return res.status(401).json({ error: 'No logueado' });
 
-        const filas = await leerSupabase('favoritos', { user_profile_id: userProfileId });
+        const filas = await listarFavoritos(userProfileId);
         res.json({ favoritos: filas || [] });
 
     } catch (error) {
@@ -664,10 +662,7 @@ app.delete('/api/favoritos/:trackId', async (req, res) => {
         const userProfileId = obtenerUserProfileId(req);
         if (!userProfileId) return res.status(401).json({ error: 'No logueado' });
 
-        const borrado = await borrarSupabase('favoritos', {
-            user_profile_id: userProfileId,
-            track_id: req.params.trackId
-        });
+        const borrado = await quitarFavorito(userProfileId, req.params.trackId);
 
         if (borrado === false) {
             return res.status(500).json({ error: 'No se pudo borrar el favorito' });

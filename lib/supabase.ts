@@ -1,7 +1,7 @@
 // Supabase en TypeScript: cliente oficial tipado con el esquema exacto de la
 // migración 0001 (users, user_profiles, favoritos). No se toca el SQL ni la
-// lógica: mismos exports y comportamiento que consume index.js, pero cada
-// query valida tablas y columnas en compilación en vez de fallar en runtime.
+// lógica. Expone una función concreta por tabla (el SDK tipa por tabla
+// concreta; los helpers genéricos con uniones no compilan con sus tipos).
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -105,10 +105,10 @@ export interface Database {
     };
 }
 
-export type SupabaseTable = keyof Database['public']['Tables'];
-export type Filtros = Record<string, string | number>;
-type Fila<T extends SupabaseTable> = Database['public']['Tables'][T]['Row'];
-type NuevaFila<T extends SupabaseTable> = Database['public']['Tables'][T]['Insert'];
+export type UserRow = Database['public']['Tables']['users']['Row'];
+export type UserProfileRow = Database['public']['Tables']['user_profiles']['Row'];
+export type FavoritoRow = Database['public']['Tables']['favoritos']['Row'];
+export type NuevoFavorito = Database['public']['Tables']['favoritos']['Insert'];
 
 let supabase: SupabaseClient<Database> | null = null;
 
@@ -142,49 +142,68 @@ if (
     );
 }
 
-// Inserta o actualiza (upsert) usando la constraint única.
-// onConflict: 'spotify_id' | 'user_id' | 'user_profile_id,track_id'
-export async function upsertSupabaseTable<T extends SupabaseTable>(
-    table: T,
-    payload: NuevaFila<T>,
-    onConflict?: string
-): Promise<Fila<T>[] | null> {
+// Crea o actualiza al usuario identificado por su id de Spotify.
+export async function upsertUsuario(input: {
+    spotify_id: string;
+    display_name?: string | null;
+    email?: string | null;
+}): Promise<UserRow[] | null> {
     if (!supabase) return null;
-    const { data, error } = await supabase
-        .from(table)
-        .upsert(payload, onConflict ? { onConflict } : undefined)
+    const res = await supabase.from('users').upsert(input, { onConflict: 'spotify_id' }).select();
+    if (res.error) throw res.error;
+    return res.data;
+}
+
+// Guarda los tokens de un usuario (ya cifrados por quien llama).
+export async function guardarTokens(
+    userId: string,
+    input: { token_spotify?: string | null; refresh_token_spotify?: string | null }
+): Promise<UserProfileRow[] | null> {
+    if (!supabase) return null;
+    const res = await supabase
+        .from('user_profiles')
+        .upsert({ user_id: userId, ...input }, { onConflict: 'user_id' })
         .select();
-    if (error) throw error;
-    return data;
+    if (res.error) throw res.error;
+    return res.data;
 }
 
-// Lee filas con filtros de igualdad. Ej: leerSupabase('user_profiles', { user_id })
-export async function leerSupabase<T extends SupabaseTable>(
-    table: T,
-    filtros: Filtros = {}
-): Promise<Fila<T>[] | null> {
+// Lee el perfil (tokens) de un usuario para renovarlos.
+export async function leerPerfilPorUsuario(userId: string): Promise<UserProfileRow[] | null> {
     if (!supabase) return null;
-    let query = supabase.from(table).select('*');
-    for (const [columna, valor] of Object.entries(filtros)) {
-        query = query.eq(columna, valor);
-    }
-    const { data, error } = await query;
-    if (error) throw error;
-    return data;
+    const res = await supabase.from('user_profiles').select('*').eq('user_id', userId);
+    if (res.error) throw res.error;
+    return res.data;
 }
 
-// Borra filas que cumplen los filtros. Devuelve true si no hubo error.
-export async function borrarSupabase<T extends SupabaseTable>(
-    table: T,
-    filtros: Filtros = {}
-): Promise<boolean> {
+// Lista los favoritos de un perfil.
+export async function listarFavoritos(userProfileId: string): Promise<FavoritoRow[] | null> {
+    if (!supabase) return null;
+    const res = await supabase.from('favoritos').select('*').eq('user_profile_id', userProfileId);
+    if (res.error) throw res.error;
+    return res.data;
+}
+
+// Agrega o actualiza un favorito (no duplica por user_profile_id + track_id).
+export async function agregarFavorito(input: NuevoFavorito): Promise<FavoritoRow[] | null> {
+    if (!supabase) return null;
+    const res = await supabase
+        .from('favoritos')
+        .upsert(input, { onConflict: 'user_profile_id,track_id' })
+        .select();
+    if (res.error) throw res.error;
+    return res.data;
+}
+
+// Borra un favorito del usuario. Devuelve false si Supabase no está configurado.
+export async function quitarFavorito(userProfileId: string, trackId: string): Promise<boolean> {
     if (!supabase) return false;
-    let query = supabase.from(table).delete();
-    for (const [columna, valor] of Object.entries(filtros)) {
-        query = query.eq(columna, valor);
-    }
-    const { error } = await query;
-    if (error) throw error;
+    const res = await supabase
+        .from('favoritos')
+        .delete()
+        .eq('user_profile_id', userProfileId)
+        .eq('track_id', trackId);
+    if (res.error) throw res.error;
     return true;
 }
 
