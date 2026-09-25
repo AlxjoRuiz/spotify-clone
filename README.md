@@ -46,6 +46,7 @@ Desarrollo del frontend (hot reload): `npm run dev` → `http://127.0.0.1:5173`.
 | `SPOTIFY_REDIRECT_URI` | Debe ser **idéntica** a la registrada en Spotify Dashboard → Settings → Redirect URIs (ej: `http://127.0.0.1:3000/auth/spotify/callback`) |
 | `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API |
 | `SESSION_SECRET` | Cualquier string largo aleatorio (firma la cookie de sesión) |
+| `DATABASE_URL` | Postgres directo de Supabase (sesiones persistentes; sin esto, memoria solo-dev) |
 | `TOKEN_ENCRYPTION_KEY` | Hex de 64 caracteres para cifrar tokens en Supabase (comando en `.env.example`) |
 | `NODE_ENV` | `development` localmente; `production` en el hosting para cookies seguras |
 

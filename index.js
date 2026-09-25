@@ -50,9 +50,26 @@ if (!/^[0-9a-fA-F]{64}$/.test(process.env.TOKEN_ENCRYPTION_KEY || '')) {
 
 if (process.env.NODE_ENV === 'production') app.set('trust proxy', 1);
 
+// Store de sesiones: Postgres (el mismo Supabase) si hay DATABASE_URL, con
+// tabla `session` autocreada. Sin DATABASE_URL usa memoria (se pierde todo al
+// reiniciar): solo vale para desarrollo local.
+let storeSesion;
+if (process.env.DATABASE_URL) {
+    const PgStore = require('connect-pg-simple')(session);
+    storeSesion = new PgStore({
+        conString: process.env.DATABASE_URL,
+        tableName: 'session',
+        createTableIfMissing: true,
+        pruneSessionInterval: 60 * 15
+    });
+} else {
+    console.warn('[sesion] Sin DATABASE_URL: sesiones en memoria (se pierden al reiniciar, solo desarrollo).');
+}
+
 // La cookie solo contiene el identificador firmado de la sesión; los tokens
 // permanecen del lado del servidor. En producción solo viaja mediante HTTPS.
 app.use(session({
+    store: storeSesion,
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
