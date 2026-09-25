@@ -46,6 +46,7 @@ Desarrollo del frontend (hot reload): `npm run dev` → `http://127.0.0.1:5173`.
 | `SPOTIFY_REDIRECT_URI` | Debe ser **idéntica** a la registrada en Spotify Dashboard → Settings → Redirect URIs (ej: `http://127.0.0.1:3000/auth/spotify/callback`) |
 | `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API |
 | `SESSION_SECRET` | Cualquier string largo aleatorio (firma la cookie de sesión) |
+| `TOKEN_ENCRYPTION_KEY` | Hex de 64 caracteres para cifrar tokens en Supabase (comando en `.env.example`) |
 | `NODE_ENV` | `development` localmente; `production` en el hosting para cookies seguras |
 
 > Si Spotify responde `redirect_uri: Not matching configuration`, la URI del `.env` y la del Dashboard no coinciden carácter por carácter (ojo con `localhost` vs `127.0.0.1`).

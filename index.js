@@ -8,6 +8,7 @@ const express = require('express');
 const session = require('express-session'); // Mantiene al usuario logueado y el token en memoria
 const axios = require('axios');             // Peticiones HTTP a Spotify
 const { upsertSupabaseTable, leerSupabase, borrarSupabase } = require('./lib/supabase'); // Supabase SDK (mismas tablas de la migración 0001)
+const { cifrarToken, descifrarTokenSeguro } = require('./lib/crypto'); // Los tokens se guardan cifrados en Supabase
 
 const app = express();
 // Cliente aislado para Spotify: el timeout evita que una caída externa deje
@@ -32,6 +33,7 @@ const variablesRequeridas = {
     SPOTIFY_CLIENT_SECRET,
     SPOTIFY_REDIRECT_URI,
     SESSION_SECRET: process.env.SESSION_SECRET,
+    TOKEN_ENCRYPTION_KEY: process.env.TOKEN_ENCRYPTION_KEY,
 };
 const faltantes = Object.entries(variablesRequeridas)
     .filter(([, valor]) => !valor || valor.startsWith('tu_') || valor === 'un_secreto_largo_y_aleatorio')
@@ -39,6 +41,11 @@ const faltantes = Object.entries(variablesRequeridas)
 
 if (faltantes.length > 0) {
     throw new Error(`Faltan variables de entorno válidas: ${faltantes.join(', ')}. Completá el archivo .env antes de iniciar el servidor.`);
+}
+
+// La clave de cifrado son 32 bytes en hex (64 caracteres); otro formato rompe AES-256.
+if (!/^[0-9a-fA-F]{64}$/.test(process.env.TOKEN_ENCRYPTION_KEY || '')) {
+    throw new Error('TOKEN_ENCRYPTION_KEY debe ser un hex de 64 caracteres. Generala con el comando de .env.example.');
 }
 
 if (process.env.NODE_ENV === 'production') app.set('trust proxy', 1);
@@ -142,8 +149,8 @@ app.get('/auth/spotify/callback', async (req, res) => {
             if (user) {
                 const profileRows = await upsertSupabaseTable('user_profiles', {
                     user_id: user.id,
-                    token_spotify: accessToken,
-                    refresh_token_spotify: refreshToken ?? null
+                    token_spotify: cifrarToken(accessToken),
+                    refresh_token_spotify: refreshToken ? cifrarToken(refreshToken) : null
                 }, 'user_id');
                 const profile = profileRows?.[0] ?? null;
 
@@ -222,7 +229,9 @@ app.get('/pages/dashboard.html', verificarLogin, (req, res) => {
 async function renovarAccessTokenSpotify(userId) {
     try {
         const filas = await leerSupabase('user_profiles', { user_id: userId });
-        const refreshToken = filas?.[0]?.refresh_token_spotify;
+        // Las filas viejas pueden estar en texto plano: se aceptan una vez y
+        // al renovar ya quedan cifradas.
+        const refreshToken = descifrarTokenSeguro(filas?.[0]?.refresh_token_spotify);
         if (!refreshToken) return null;
 
         const response = await spotifyHttp.post('https://accounts.spotify.com/api/token',
@@ -235,11 +244,13 @@ async function renovarAccessTokenSpotify(userId) {
 
         const nuevoToken = response.data.access_token;
 
-        // Spotify a veces rota el refresh_token; si no manda uno nuevo, conserva el viejo
+        // Spotify a veces rota el refresh_token; si no manda uno nuevo, conserva el viejo.
+        // Ambos se guardan cifrados (refreshToken ya viene descifrado de arriba).
+        const refreshNuevo = response.data.refresh_token ?? refreshToken;
         await upsertSupabaseTable('user_profiles', {
             user_id: userId,
-            token_spotify: nuevoToken,
-            refresh_token_spotify: response.data.refresh_token ?? refreshToken
+            token_spotify: cifrarToken(nuevoToken),
+            refresh_token_spotify: cifrarToken(refreshNuevo)
         }, 'user_id');
 
         return { token: nuevoToken, expiresAt: Date.now() + (response.data.expires_in || 3600) * 1000 };

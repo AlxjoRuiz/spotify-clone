@@ -41,6 +41,7 @@ La búsqueda acepta términos de hasta 100 caracteres y las llamadas a Spotify t
 |---|---|
 | `index.js` | Servidor Express: login OAuth, sesión, rutas `/api`, renovación de tokens y archivos compilados. |
 | `lib/supabase.ts` | Cliente de Supabase y funciones reutilizables para leer, guardar y borrar datos. |
+| `lib/crypto.js` | Cifrado AES-256-GCM de los tokens de Spotify antes de guardarlos en Supabase. |
 | `pages/login.html` | Punto de entrada HTML de la pantalla de inicio de sesión. |
 | `pages/dashboard.html` | Punto de entrada HTML del dashboard protegido. |
 | `scripts/login.tsx` | Interfaz de login y enlace seguro hacia la autorización de Spotify. |
