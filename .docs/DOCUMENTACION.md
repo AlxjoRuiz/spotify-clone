@@ -20,6 +20,8 @@ En local, `localhost` y `127.0.0.1` no comparten cookies. Usá siempre el host r
 
 Si Supabase falla, el login de Spotify continúa, pero favoritos y renovación persistente de tokens quedan deshabilitados hasta corregir Supabase.
 
+La renovación del token es bajo demanda (sin cronjobs): `pedirASpotify` reintenta una vez ante un 401 y `/api/token` renueva por expiración. Los tokens se guardan cifrados (AES-256-GCM).
+
 ## Rutas API
 
 | Grupo | Propósito |

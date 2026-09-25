@@ -14,6 +14,13 @@ RLS habilitado sin políticas: el acceso real pasa por la `SERVICE_ROLE_KEY`
 del backend (`lib/supabase.ts`), que hace bypass de RLS. Los tokens de
 Spotify se guardan cifrados (AES-256-GCM, ver `lib/crypto.js`).
 
+## RLS endurecido (migración `0002_endurecimiento_rls.sql`)
+
+Defensa en profundidad sin cambiar el funcionamiento: RLS sigue activado,
+sin políticas permisivas (anon/authenticated no ven nada por defecto),
+privilegios directos revocados y acceso total explícito solo a
+`service_role`. Aplicarla igual que la 0001, después de ella.
+
 ## Tabla de sesiones (automática, sin migración)
 
 Con `DATABASE_URL` configurado, `connect-pg-simple` crea y usa la tabla
